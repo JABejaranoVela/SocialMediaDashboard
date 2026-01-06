@@ -29,7 +29,7 @@ const router = useRouter()
 const login = async () => {
   error.value = ''
   try {
-    const res = await fetch('http://localhost:9090/api/auth/login', {
+    const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

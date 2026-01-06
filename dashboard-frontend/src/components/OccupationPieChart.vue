@@ -29,7 +29,7 @@ const chartOptions = {
 }
 
 onMounted(async () => {
-  const resp = await fetch('http://localhost:9090/api/demographics/dashboard/occupation-status-pie')
+  const resp = await fetch('/api/demographics/dashboard/occupation-status-pie')
   const data = await resp.json()
   chartData.value = {
     labels: data.labels,

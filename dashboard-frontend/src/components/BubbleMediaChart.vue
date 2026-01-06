@@ -14,7 +14,7 @@ const chartData = ref(null)
 const chartOptions = ref({})
 
 onMounted(async () => {
-  const resp = await fetch('http://localhost:9090/api/dashboard/platform/bubble-count')
+  const resp = await fetch('/api/dashboard/platform/bubble-count')
   const data = await resp.json()
 
   // Colores corporativos solo para las plataformas presentes

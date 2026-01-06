@@ -55,7 +55,7 @@ const chartOptions = {
 }
 
 onMounted(async () => {
-  const resp = await fetch('http://localhost:9090/api/dashboard/social-media-usage/average-by-age')
+  const resp = await fetch('/api/dashboard/social-media-usage/average-by-age')
   const data = await resp.json()
   chartData.value = {
     labels: data.labels,

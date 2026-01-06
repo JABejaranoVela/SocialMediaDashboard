@@ -103,12 +103,12 @@ const bulletData = ref({ labels: [], averages: [] })
 onMounted(async () => {
   // Peticiones a la API del backend
   const [c1, c2, c3, bubbleResp, occupationResp, bulletResp] = await Promise.all([
-    fetch('http://localhost:9090/api/dashboard/respondent/count').then(r => r.text()),
-    fetch('http://localhost:9090/api/dashboard/social-media-users/percent').then(r => r.text()),
-    fetch('http://localhost:9090/api/dashboard/distraction/average').then(r => r.text()),
-    fetch('http://localhost:9090/api/dashboard/platform/bubble-count').then(r => r.json()),
-    fetch('http://localhost:9090/api/demographics/dashboard/occupation-status-pie').then(r => r.json()),
-    fetch('http://localhost:9090/api/dashboard/mental-health/bullet-averages').then(r => r.json())
+    fetch('/api/dashboard/respondent/count').then(r => r.text()),
+    fetch('/api/dashboard/social-media-users/percent').then(r => r.text()),
+    fetch('/api/dashboard/distraction/average').then(r => r.text()),
+    fetch('/api/dashboard/platform/bubble-count').then(r => r.json()),
+    fetch('/api/demographics/dashboard/occupation-status-pie').then(r => r.json()),
+    fetch('/api/dashboard/mental-health/bullet-averages').then(r => r.json())
   ])
   // KPIs principales
   kpis.value.respondentCount = c1
