@@ -1,20 +1,27 @@
-# -------------------------------
-# ETAPA 1: compilación con Maven+JDK21
-# -------------------------------
-FROM maven:3.9.6-eclipse-temurin-21 AS build
+# ---------- STAGE 1: Build (Maven + JDK 21) ----------
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
-# Cachear dependencias
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
-# Compilar el proyecto
-COPY src ./src
-RUN mvn clean package -DskipTests -B
 
-# -------------------------------
-# ETAPA 2: runtime con JRE21
-# -------------------------------
+# Copiamos primero el pom para aprovechar cache de dependencias
+COPY pom.xml .
+RUN mvn -q -DskipTests dependency:go-offline
+
+# Copiamos el código fuente
+COPY src ./src
+
+# Compilamos el jar ejecutable de Spring Boot
+RUN mvn -DskipTests clean package
+
+
+# ---------- STAGE 2: Runtime (JRE 21) ----------
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /workspace/target/*.jar app.jar
+
+# Copiamos el jar generado (Spring Boot repackage)
+COPY --from=build /workspace/target/*.jar /app/app.jar
+
+# Render expone el puerto vía env PORT; Spring lo usará con server.port=${PORT:8080}
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Arranque
+ENTRYPOINT ["java","-jar","/app/app.jar"]
