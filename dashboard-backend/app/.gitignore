@@ -1,0 +1,14 @@
+# env files
+config/application-dev.local.properties
+src/main/resources/application-*.local.properties
+.env
+*.env
+
+# IDE / OS
+.vscode/
+.idea/
+*.iml
+
+# Java build
+target/
+*.log
