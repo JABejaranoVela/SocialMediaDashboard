@@ -1,6 +1,6 @@
 # SocialMediaDashboard
 
-![SocialMediaDashboard demo](assets/social-media-dashboard-demo.gif)
+**Live demo:** [jabejaranosocialmediadashboard.netlify.app](https://jabejaranosocialmediadashboard.netlify.app/)
 
 ## Description
 
