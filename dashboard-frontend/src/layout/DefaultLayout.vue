@@ -195,4 +195,72 @@ function handleLogout() {
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
 }
+/* Modal logout (para el modo hamburguesa) */
+.logout-modal-mask {
+  position: fixed;
+  z-index: 99999;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.19);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logout-modal {
+  background: #fff;
+  color: #222;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px #0002;
+  padding: 2rem 2.2rem 1.5rem 2.2rem;
+  text-align: center;
+  min-width: 250px;
+}
+
+.logout-modal h3 {
+  font-size: 1.15rem;
+  margin-bottom: 1.3rem;
+  font-weight: 600;
+}
+
+.logout-modal-btn-row {
+  display: flex;
+  gap: 1.2rem;
+  justify-content: center;
+  margin-top: 0.2rem;
+}
+
+.logout-modal-yes {
+  background: #e04444;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 2.2rem;
+  font-size: 1.08rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.14s;
+}
+
+.logout-modal-yes:hover {
+  background: #b30000;
+}
+
+.logout-modal-cancel {
+  background: #eee;
+  color: #222;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 2.2rem;
+  font-size: 1.08rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.14s;
+}
+
+.logout-modal-cancel:hover {
+  background: #dadada;
+}
 </style>
