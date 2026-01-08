@@ -126,19 +126,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* =========================
+   Layout general
+   ========================= */
 .dashboard-wrapper {
-  /* Mantén solo padding lateral pequeño para que no se solape el sidebar */
-  padding: 2rem 1.2rem;
+  padding: clamp(0.6rem, 1.8vw, 2rem) clamp(0.4rem, 1.6vw, 1.2rem);
   max-width: 1400px;
   margin: 0 auto;
   box-sizing: border-box;
   width: 100%;
-}
-
-@media (max-width: 900px) {
-  .dashboard-wrapper {
-    padding: 0.6rem 0.2rem;
-  }
 }
 
 /* Info text blocks */
@@ -166,7 +162,9 @@ onMounted(async () => {
   font-weight: 600;
 }
 
-/* Fila principal de KPIs + gráfica */
+/* =========================
+   FILA 1: KPIs + Bar chart
+   ========================= */
 .dashboard-row {
   display: flex;
   flex-direction: row;
@@ -192,22 +190,17 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100%;
-  height: 100%;
-  padding: 1.5rem 2.5rem;
+  height: auto;
+  min-height: 360px;
+  padding: clamp(0.8rem, 2vw, 1.5rem);
   min-width: 0;
+  overflow: visible;
 }
 
-.bar-col canvas {
-  min-width: 320px !important;
-  min-height: 220px !important;
-  width: 100% !important;
-  height: 350px !important;
-  max-width: 1000px;
-  margin: 0 auto;
-}
 
-/* SEGUNDA FILA: KPIs de redes + burbujas */
+/* =========================
+  FILA 2: Bubble + KPIs redes
+  ========================= */
 .bubble-row {
   display: flex;
   flex-direction: row;
@@ -215,13 +208,6 @@ onMounted(async () => {
   gap: 2rem;
   margin-bottom: 3rem;
   margin-top: 3rem;
-}
-
-.social-kpis-col {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  min-width: 300px;
 }
 
 .bubble-col {
@@ -233,70 +219,29 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   min-height: 340px;
-  padding: 1.5rem 2.5rem;
+  padding: clamp(0.8rem, 2vw, 1.5rem);
   min-width: 0;
+  overflow: hidden;
 }
 
+.social-kpis-col {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 300px;
+  margin-top: 2%;
+}
+
+/* Grid de KPIs (para SocialKpiCard y OccupationKpiCard) */
 .kpis-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
 
-@media (max-width: 1050px) {
-  .dashboard-row,
-  .bubble-row,
-  .occupation-row {
-    flex-direction: column;
-    gap: 1.2rem;
-    min-height: unset;
-  }
-  .kpis-col,
-  .social-kpis-col,
-  .occupation-kpis-col {
-    max-width: 100%;
-    width: 100%;
-    flex: none;
-    align-items: stretch;
-    justify-content: stretch;
-  }
-  .bar-col,
-  .bubble-col,
-  .occupation-pie-col {
-    width: 100%;
-    min-width: 0;
-    padding: 1.2rem 0.5rem;
-  }
-}
-
-@media (max-width: 700px) {
-  .dashboard-wrapper {
-    padding: 0.4rem 0.08rem;
-  }
-  .kpis-col,
-  .social-kpis-col,
-  .occupation-kpis-col {
-    gap: 0.5rem;
-    min-width: 0;
-    max-width: 100%;
-    width: 100%;
-    padding: 0;
-  }
-  .section-info {
-    font-size: 0.96rem;
-    padding: 0.6rem 0.6rem;
-  }
-  .kpis-grid {
-    grid-template-columns: 1fr;
-  }
-  .bar-col,
-  .bubble-col,
-  .occupation-pie-col {
-    padding: 0.5rem 0.2rem;
-    min-width: 0;
-  }
-}
-
+/* =========================
+   FILA 3: Ocupación + Pie chart
+   ========================= */
 .occupation-row {
   display: flex;
   flex-direction: row;
@@ -323,10 +268,13 @@ onMounted(async () => {
   justify-content: center;
   min-height: 360px;
   padding: 2rem 2.5rem;
-  min-width: 0;
+  min-width: 0;      /* importante en flex */
+  overflow: hidden;  /* evita desplazamiento horizontal del canvas */
 }
 
-/* BULLET CHARTS */
+/* =========================
+   FILA 4: Bullet charts
+   ========================= */
 .bullet-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -335,13 +283,98 @@ onMounted(async () => {
   justify-items: center;
 }
 
+/* =========================
+   RESPONSIVE
+   (IMPORTANTE: al final para que gane)
+   ========================= */
+@media (max-width: 1200px) {
+  .dashboard-row,
+  .bubble-row,
+  .occupation-row {
+    flex-direction: column;
+    gap: 1.2rem;
+    min-height: unset;
+  }
+
+  .kpis-col,
+  .social-kpis-col,
+  .occupation-kpis-col {
+    max-width: 100%;
+    width: 100%;
+    flex: none;
+    align-items: stretch;
+    justify-content: center;
+    min-width: 0;
+    margin-bottom: 0; /* quito el 20% que te descoloca el layout */
+  }
+
+  .bar-col,
+  .bubble-col,
+  .occupation-pie-col {
+    width: 100%;
+    min-width: 0;
+    padding: 1rem 0.6rem;
+  }
+
+  /* 3 columnas por debajo de 1200 */
+  .kpis-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .bar-col {
+    height: auto;
+    min-height: clamp(260px, 45vw, 380px);
+  }
+  .bubble-col {
+    order: 2;
+  }
+  .social-kpis-col {
+    order: 1;
+  }
+}
+
+@media (max-width: 700px) {
+  .kpis-col,
+  .social-kpis-col,
+  .occupation-kpis-col {
+    gap: 0.5rem;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    padding: 0;
+  }
+
+  .section-info {
+    font-size: 0.96rem;
+    padding: 0.6rem 0.6rem;
+  }
+
+  /* vuelve a 2 columnas en pantallas pequeñas */
+  .kpis-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bar-col,
+  .bubble-col,
+  .occupation-pie-col {
+    padding: 0.5rem 0.4rem;
+    min-width: 0;
+  }
+}
+
 @media (max-width: 500px) {
   .bullet-row {
     grid-template-columns: 1fr;
     gap: 1rem 0;
   }
+
   .section-info {
     font-size: 0.92rem;
   }
+
+  .kpis-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
+

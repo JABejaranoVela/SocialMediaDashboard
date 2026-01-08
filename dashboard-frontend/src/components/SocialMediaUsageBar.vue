@@ -76,24 +76,10 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Mantén altura flexible */
-  height: 350px;
-}
-
-@media (max-width: 900px) {
-  .chart-wrapper {
-    height: 270px;
-    max-width: 100%;
-    min-width: 0;
-  }
-}
-
-@media (max-width: 600px) {
-  .chart-wrapper {
-    height: 210px;
-    max-width: 100vw;
-    padding: 0 0.2rem;
-  }
+  height: clamp(220px, 36vw, 360px);
+  min-height: 220px;
+  padding: 0 clamp(0.2rem, 1.2vw, 0.8rem);
+  box-sizing: border-box;
 }
 
 /* Asegura que el canvas siempre ocupe todo el contenedor */

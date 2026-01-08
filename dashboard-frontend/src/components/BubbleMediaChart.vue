@@ -86,27 +86,14 @@ onMounted(async () => {
 .chart-wrapper {
   width: 100%;
   max-width: 1000px;
-  height: 370px;
+  height: clamp(200px, 34vw, 360px);
   margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  padding: 0; /* default */
-}
-
-@media (max-width: 800px) {
-  .chart-wrapper {
-    height: 290px;
-    max-width: 100vw;
-    padding: 0 0.5rem;
-  }
-}
-
-@media (max-width: 500px) {
-  .chart-wrapper {
-    height: 180px;
-    padding: 0 0.2rem;
-  }
+  padding: 0 clamp(0.2rem, 1.4vw, 0.8rem);
+  min-height: 200px;
+  margin-top: 10%;
 }
 </style>

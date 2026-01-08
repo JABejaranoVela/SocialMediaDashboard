@@ -78,8 +78,9 @@ function closeLogoutModal() {
   position: fixed;
   top: 0;
   left: 0;
+  bottom: 0;
   min-height: 100vh;
-  height: 100vh;
+  height: auto;
   background: #2a2d3e;
   color: #fff;
   width: 250px;
@@ -87,6 +88,7 @@ function closeLogoutModal() {
   flex-direction: column;
   align-items: center;
   padding-top: 2rem;
+  overflow-y: auto;
   z-index: 999;
 }
 
