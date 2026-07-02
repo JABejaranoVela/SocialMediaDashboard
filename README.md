@@ -203,7 +203,7 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml -f docker-compose
 
 The file `db/dashboard.sql` is processed by the official MySQL image only when the database volume is empty. Restarting containers does not re-import it. Deleting the volume destroys local database data and causes the dump to be imported again on the next start.
 
-This SQL dump is an initial deployment mechanism, not a migration system. Flyway or Liquibase should be introduced before production schema evolution. The current dump also contains a demo `admin` account with a BCrypt password hash; review and replace that credential before any real deployment.
+This SQL dump is an initial deployment mechanism, not a migration system. Flyway or Liquibase should be introduced before production schema evolution. New databases initialized from the dump contain public demo survey data but no application user or administrator. Create production users outside Git through a controlled provisioning procedure.
 
 The Netlify site remains available as the original demo and can coexist as a fallback. The production deployment is available at `https://socialmedia.jabejarano.tech`.
 
@@ -267,6 +267,25 @@ This first CI/CD version has no automatic rollback. A failed health check marks 
 - `/srv/apps/social-media-dashboard/.env.deploy`
 
 Container image cleanup is limited to dangling images. Backup retention, automatic rollback, schema migrations and blocking npm vulnerability audits remain separate follow-up work; the current known npm findings do not block this workflow.
+
+---
+
+## Application security model
+
+The backend is the authority for access control; frontend route guards are only a user-interface convenience. Public unauthenticated application endpoints are limited to:
+
+- `POST /api/auth/login`
+- `GET /api/dashboard/**` (aggregate dashboard data)
+- `GET /api/demographics/dashboard/occupation-status-pie` (aggregate chart data)
+- `GET /actuator/health` and `GET /actuator/info`
+
+All other API endpoints require a valid JWT. In particular, `/api/respondents/**` is private and scopes reads, updates and deletes to the authenticated username. Respondent responses use an explicit DTO and expose only `username` and `role` from the owner; password hashes are never part of the response model.
+
+Login protection keeps an in-memory counter per client IP and normalized username. Five failed attempts within 15 minutes block that key for 15 minutes and return HTTP 429 with `Retry-After`. A successful login clears the counter. The map is bounded and cleans expired entries opportunistically. This protection is local to one backend process, resets on restart and uses the last `X-Forwarded-For` hop because production only exposes the backend through the trusted host Nginx on loopback. Nginx must overwrite or append the real remote address consistently. If the backend is ever exposed directly, forwarded headers must not be trusted without a trusted-proxy policy. Add Nginx host rate limiting as the durable perimeter control in a later VPS phase.
+
+The versioned SQL dump no longer provisions the previous demo administrator. It also detaches demo survey records from application users, which is valid because `respondent.user_id` is nullable. This affects only newly initialized MySQL volumes: it does not alter the existing VPS database. Any previously loaded production administrator must be rotated or removed manually before continued production use. Do not store its replacement password or hash in Git.
+
+Schema changes still rely on an initialization dump and `ddl-auto=validate`; adopting Flyway or Liquibase remains a required follow-up before evolving the production schema.
 
 ---
 

@@ -53,25 +53,31 @@ public class RespondentService {
         this.repo = repo;
     }
 
-    public List<Respondent> findAll() {
-        return repo.findAll();
+    public List<Respondent> findAllByUsername(String username) {
+        return repo.findByUser_UsernameOrderByTimestampDesc(username);
     }
 
-    public Optional<Respondent> findById(Integer id) {
-        return repo.findById(id);
+    public Optional<Respondent> findByIdAndUsername(Integer id, String username) {
+        return repo.findByRespondentIdAndUser_Username(id, username);
     }
 
     public Respondent save(Respondent r) {
         return repo.save(r);
     }
 
-    public void deleteById(Integer id) {
-        repo.deleteById(id);
+    @Transactional
+    public boolean deleteByIdAndUsername(Integer id, String username) {
+        Optional<Respondent> respondent = repo.findByRespondentIdAndUser_Username(id, username);
+        if (respondent.isEmpty()) {
+            return false;
+        }
+        repo.delete(respondent.get());
+        return true;
     }
 
     @Transactional
-    public Optional<Respondent> updateRespondent(Integer id, RespondentRegisterDto dto) {
-        Optional<Respondent> optionalRespondent = respondentRepository.findById(id);
+    public Optional<Respondent> updateRespondent(Integer id, String username, RespondentRegisterDto dto) {
+        Optional<Respondent> optionalRespondent = respondentRepository.findByRespondentIdAndUser_Username(id, username);
         if (optionalRespondent.isEmpty()) {
             return Optional.empty();
         }

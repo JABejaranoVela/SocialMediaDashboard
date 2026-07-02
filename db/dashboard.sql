@@ -283,6 +283,10 @@ UNLOCK TABLES;
 -- Table structure for table `users`
 --
 
+-- Demo survey records are intentionally not owned by a versioned application user.
+-- Production users must be provisioned outside this dump.
+UPDATE `respondent` SET `user_id` = NULL WHERE `user_id` IS NOT NULL;
+
 DROP TABLE IF EXISTS `users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -293,7 +297,7 @@ CREATE TABLE `users` (
   `role` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -302,7 +306,6 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'admin','$2a$12$OP4wXTt8HDHX41w8ZDF99ueDya65XGupmXhzMSEGtD2LtWWZlUkCK','admin');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

@@ -3,6 +3,7 @@ package es.studium.dashboard.app.Controllers;
 import es.studium.dashboard.app.auth.Users;
 import es.studium.dashboard.app.auth.UsersRepository;
 import es.studium.dashboard.app.dto.RespondentRegisterDto;
+import es.studium.dashboard.app.dto.RespondentResponseDto;
 import es.studium.dashboard.app.model.Demographics;
 import es.studium.dashboard.app.model.MentalHealthMetrics;
 import es.studium.dashboard.app.model.Organization;
@@ -21,12 +22,16 @@ import es.studium.dashboard.app.repository.RespondentPlatformRepository;
 import es.studium.dashboard.app.repository.RespondentRepository;
 import es.studium.dashboard.app.repository.SocialMediaUsageRepository;
 import es.studium.dashboard.app.service.RespondentService;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.time.LocalDateTime;
@@ -37,162 +42,153 @@ import java.util.List;
 public class RespondentController {
 
     private final RespondentService service;
+    private final RespondentRepository respondentRepository;
+    private final SocialMediaUsageRepository socialMediaUsageRepository;
+    private final MentalHealthMetricsRepository mentalHealthMetricsRepository;
+    private final UsersRepository usersRepository;
+    private final OrganizationRepository organizationRepository;
+    private final PlatformRepository platformRepository;
+    private final RespondentOrganizationRepository respondentOrganizationRepository;
+    private final RespondentPlatformRepository respondentPlatformRepository;
 
-    @Autowired
-    private RespondentRepository respondentRepository;
-    @Autowired
-    private SocialMediaUsageRepository socialMediaUsageRepository;
-    @Autowired
-    private MentalHealthMetricsRepository mentalHealthMetricsRepository;
-    @Autowired
-    private UsersRepository usersRepository;
-    @Autowired
-    private OrganizationRepository organizationRepository;
-
-    @Autowired
-    private PlatformRepository platformRepository;
-
-    @Autowired
-    private RespondentOrganizationRepository respondentOrganizationRepository;
-
-    @Autowired
-    private RespondentPlatformRepository respondentPlatformRepository;
-
-    public RespondentController(RespondentService service) {
+    public RespondentController(
+            RespondentService service,
+            RespondentRepository respondentRepository,
+            SocialMediaUsageRepository socialMediaUsageRepository,
+            MentalHealthMetricsRepository mentalHealthMetricsRepository,
+            UsersRepository usersRepository,
+            OrganizationRepository organizationRepository,
+            PlatformRepository platformRepository,
+            RespondentOrganizationRepository respondentOrganizationRepository,
+            RespondentPlatformRepository respondentPlatformRepository) {
         this.service = service;
-    }
-
-    @GetMapping("/test")
-    public ResponseEntity<String> test() {
-        System.out.println("ENTRÓ EN EL MÉTODO GET /test");
-        return ResponseEntity.ok("OK desde test");
+        this.respondentRepository = respondentRepository;
+        this.socialMediaUsageRepository = socialMediaUsageRepository;
+        this.mentalHealthMetricsRepository = mentalHealthMetricsRepository;
+        this.usersRepository = usersRepository;
+        this.organizationRepository = organizationRepository;
+        this.platformRepository = platformRepository;
+        this.respondentOrganizationRepository = respondentOrganizationRepository;
+        this.respondentPlatformRepository = respondentPlatformRepository;
     }
 
     @GetMapping
-    public List<Respondent> listAll() {
-        return service.findAll();
+    public List<RespondentResponseDto> listAll(Authentication authentication) {
+        return service.findAllByUsername(authentication.getName()).stream()
+                .map(RespondentResponseDto::from)
+                .toList();
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Respondent> getOne(@PathVariable Integer id) {
-        return service.findById(id)
+    @GetMapping("/{id:\\d+}")
+    public ResponseEntity<RespondentResponseDto> getOne(
+            @PathVariable Integer id,
+            Authentication authentication) {
+        return service.findByIdAndUsername(id, authentication.getName())
+                .map(RespondentResponseDto::from)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody RespondentRegisterDto dto) {
-        System.out.println("ENTRÓ EN EL MÉTODO POST DE RESPONDENTS");
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth.getName();
-
-        // Busca el usuario autenticado
-        Users user = usersRepository.findByUsername(username);
+    public ResponseEntity<?> create(@RequestBody RespondentRegisterDto dto, Authentication authentication) {
+        Users user = usersRepository.findByUsername(authentication.getName());
         if (user == null) {
             return ResponseEntity.status(401).body("No autorizado");
         }
 
-        // 1. Guardar Respondent (principal)
         Respondent respondent = new Respondent();
         respondent.setAge(dto.getAge());
         respondent.setGender(dto.getGender());
         respondent.setTimestamp(LocalDateTime.now());
         respondent.setUser(user);
 
-        // 2. Demographics como hijo
-        Demographics demo = new Demographics();
-        demo.setRelationshipStatus(dto.getDemographics().getRelationshipStatus());
-        demo.setOccupationStatus(dto.getDemographics().getOccupationStatus());
-        demo.setRespondent(respondent); // <-- Asocia el padre
-        respondent.setDemographics(demo); // <-- Asocia el hijo (opcional, pero recomendable)
+        Demographics demographics = new Demographics();
+        demographics.setRelationshipStatus(dto.getDemographics().getRelationshipStatus());
+        demographics.setOccupationStatus(dto.getDemographics().getOccupationStatus());
+        demographics.setRespondent(respondent);
+        respondent.setDemographics(demographics);
 
-        // 3. Guardar Social Media Usage
-        SocialMediaUsage smu = new SocialMediaUsage();
-        smu.setUsesSocialMedia(dto.getSocialMediaUsage().getUsesSocialMedia());
-        smu.setDailyAverageTime(dto.getSocialMediaUsage().getDailyAverageTime());
-        smu.setAimlessUsageFrequency(dto.getSocialMediaUsage().getAimlessUsageFrequency());
-        smu.setDistractionFrequency(dto.getSocialMediaUsage().getDistractionFrequency());
-        smu.setRestlessnessFrequency(dto.getSocialMediaUsage().getRestlessnessFrequency());
-        smu.setRespondent(respondent); // <-- AQUÍ TAMBIÉN
-        socialMediaUsageRepository.save(smu);
+        SocialMediaUsage socialMediaUsage = new SocialMediaUsage();
+        socialMediaUsage.setUsesSocialMedia(dto.getSocialMediaUsage().getUsesSocialMedia());
+        socialMediaUsage.setDailyAverageTime(dto.getSocialMediaUsage().getDailyAverageTime());
+        socialMediaUsage.setAimlessUsageFrequency(dto.getSocialMediaUsage().getAimlessUsageFrequency());
+        socialMediaUsage.setDistractionFrequency(dto.getSocialMediaUsage().getDistractionFrequency());
+        socialMediaUsage.setRestlessnessFrequency(dto.getSocialMediaUsage().getRestlessnessFrequency());
+        socialMediaUsage.setRespondent(respondent);
+        socialMediaUsageRepository.save(socialMediaUsage);
+        respondent.setSocialMediaUsage(socialMediaUsage);
 
-        // 4. Guardar Mental Health Metrics
-        MentalHealthMetrics mhm = new MentalHealthMetrics();
-        mhm.setEasilyDistractedScale(dto.getMentalHealthMetrics().getEasilyDistractedScale());
-        mhm.setWorryIntensityScale(dto.getMentalHealthMetrics().getWorryIntensityScale());
-        mhm.setDifficultyConcentrating(dto.getMentalHealthMetrics().getDifficultyConcentrating());
-        mhm.setSocialComparisonFrequency(dto.getMentalHealthMetrics().getSocialComparisonFrequency());
-        mhm.setComparisonFeeling(dto.getMentalHealthMetrics().getComparisonFeeling());
-        mhm.setValidationSeekingFrequency(dto.getMentalHealthMetrics().getValidationSeekingFrequency());
-        mhm.setDepressedFrequency(dto.getMentalHealthMetrics().getDepressedFrequency());
-        mhm.setInterestFluctuationScale(dto.getMentalHealthMetrics().getInterestFluctuationScale());
-        mhm.setSleepIssueScale(dto.getMentalHealthMetrics().getSleepIssueScale());
-        mhm.setRespondent(respondent); // <-- Y AQUÍ
-        mentalHealthMetricsRepository.save(mhm); // <-- cascade
+        MentalHealthMetrics mentalHealthMetrics = new MentalHealthMetrics();
+        mentalHealthMetrics.setEasilyDistractedScale(dto.getMentalHealthMetrics().getEasilyDistractedScale());
+        mentalHealthMetrics.setWorryIntensityScale(dto.getMentalHealthMetrics().getWorryIntensityScale());
+        mentalHealthMetrics.setDifficultyConcentrating(dto.getMentalHealthMetrics().getDifficultyConcentrating());
+        mentalHealthMetrics.setSocialComparisonFrequency(dto.getMentalHealthMetrics().getSocialComparisonFrequency());
+        mentalHealthMetrics.setComparisonFeeling(dto.getMentalHealthMetrics().getComparisonFeeling());
+        mentalHealthMetrics.setValidationSeekingFrequency(dto.getMentalHealthMetrics().getValidationSeekingFrequency());
+        mentalHealthMetrics.setDepressedFrequency(dto.getMentalHealthMetrics().getDepressedFrequency());
+        mentalHealthMetrics.setInterestFluctuationScale(dto.getMentalHealthMetrics().getInterestFluctuationScale());
+        mentalHealthMetrics.setSleepIssueScale(dto.getMentalHealthMetrics().getSleepIssueScale());
+        mentalHealthMetrics.setRespondent(respondent);
+        mentalHealthMetricsRepository.save(mentalHealthMetrics);
+        respondent.setMentalHealthMetrics(mentalHealthMetrics);
 
-        // respondent = respondentRepository.save(respondent);
-
-        // 5. (Opcional) Guardar Organización (solo si viene)
         if (dto.getOrganizationName() != null && !dto.getOrganizationName().isEmpty()) {
-            Organization org = organizationRepository.findByOrganizationName(dto.getOrganizationName())
+            Organization organization = organizationRepository.findByOrganizationName(dto.getOrganizationName())
                     .orElseGet(() -> {
-                        Organization o = new Organization();
-                        o.setOrganizationName(dto.getOrganizationName());
-                        return organizationRepository.save(o);
+                        Organization newOrganization = new Organization();
+                        newOrganization.setOrganizationName(dto.getOrganizationName());
+                        return organizationRepository.save(newOrganization);
                     });
-
-            // Tabla puente: RespondentOrganization
-            RespondentOrganization ro = new RespondentOrganization();
-            ro.setId(new RespondentOrganizationId(respondent.getRespondentId(), org.getOrganizationId()));
-            ro.setRespondent(respondent);
-            ro.setOrganization(org);
-            respondentOrganizationRepository.save(ro);
+            RespondentOrganization link = new RespondentOrganization();
+            link.setId(new RespondentOrganizationId(respondent.getRespondentId(), organization.getOrganizationId()));
+            link.setRespondent(respondent);
+            link.setOrganization(organization);
+            respondentOrganizationRepository.save(link);
         }
 
-        // 6. Plataformas (N:M)
         if (dto.getPlatforms() != null) {
             for (String platformName : dto.getPlatforms()) {
                 Platform platform = platformRepository.findByPlatformName(platformName)
                         .orElseGet(() -> {
-                            Platform p = new Platform();
-                            p.setPlatformName(platformName);
-                            return platformRepository.save(p);
+                            Platform newPlatform = new Platform();
+                            newPlatform.setPlatformName(platformName);
+                            return platformRepository.save(newPlatform);
                         });
-
-                RespondentPlatform rp = new RespondentPlatform();
-                rp.setId(new RespondentPlatformId(respondent.getRespondentId(), platform.getPlatformId()));
-                rp.setRespondent(respondent);
-                rp.setPlatform(platform);
-                respondentPlatformRepository.save(rp);
+                RespondentPlatform link = new RespondentPlatform();
+                link.setId(new RespondentPlatformId(respondent.getRespondentId(), platform.getPlatformId()));
+                link.setRespondent(respondent);
+                link.setPlatform(platform);
+                respondentPlatformRepository.save(link);
             }
         }
 
-        // Devuelve el respondent creado (puedes devolver un DTO si quieres)
-        return ResponseEntity
-                .created(URI.create("/api/respondents/" + respondent.getRespondentId()))
-                .body(respondent);
+        return ResponseEntity.created(URI.create("/api/respondents/" + respondent.getRespondentId()))
+                .body(RespondentResponseDto.from(respondent));
     }
 
     @GetMapping("/by-user")
-    public List<Respondent> getByUser() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth.getName();
-        return respondentRepository.findByUser_UsernameOrderByTimestampDesc(username);
+    public List<RespondentResponseDto> getByUser(Authentication authentication) {
+        return respondentRepository.findByUser_UsernameOrderByTimestampDesc(authentication.getName()).stream()
+                .map(RespondentResponseDto::from)
+                .toList();
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody RespondentRegisterDto dto) {
-        return service.updateRespondent(id, dto)
-                .map(updated -> ResponseEntity.ok(updated))
+    @PutMapping("/{id:\\d+}")
+    public ResponseEntity<RespondentResponseDto> update(
+            @PathVariable Integer id,
+            @RequestBody RespondentRegisterDto dto,
+            Authentication authentication) {
+        return service.updateRespondent(id, authentication.getName(), dto)
+                .map(RespondentResponseDto::from)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        if (service.findById(id).isEmpty()) {
+    @DeleteMapping("/{id:\\d+}")
+    public ResponseEntity<Void> delete(@PathVariable Integer id, Authentication authentication) {
+        if (!service.deleteByIdAndUsername(id, authentication.getName())) {
             return ResponseEntity.notFound().build();
         }
-        service.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 }
