@@ -1,302 +1,255 @@
 # SocialMediaDashboard
 
-**Live demo:** [jabejaranosocialmediadashboard.netlify.app](https://jabejaranosocialmediadashboard.netlify.app/)
+Dashboard web full-stack para explorar de forma visual datos de uso de redes sociales y su relación con indicadores de bienestar declarados en una encuesta.
 
-## Description
+[Demo en producción](https://socialmedia.jabejarano.tech) · [Repositorio](https://github.com/JABejaranoVela/SocialMediaDashboard) · [Demo original en Netlify](https://jabejaranosocialmediadashboard.netlify.app/)
 
-`SocialMediaDashboard` is an interactive web dashboard that helps explore how **social media usage** relates to different **mental health indicators** using survey-based data.
+## 1. Resumen del proyecto
 
-The application is built with a decoupled architecture:
+SocialMediaDashboard transforma un conjunto de respuestas de encuesta en un panel comprensible, con indicadores agregados y visualizaciones sobre hábitos digitales, características demográficas y métricas de bienestar. El dashboard es público, mientras que la creación, consulta, edición y eliminación de registros propios requiere autenticación.
 
-- **Backend:** Java + Spring Boot (REST API) with **JWT authentication**
-- **Frontend:** Vue (SPA) powered by **Vite**, using **CoreUI** for the UI
-- **Database:** MySQL (relational schema for respondents, demographics, usage metrics, mental health metrics, platforms, organizations, and users)
+Es un proyecto académico y de demostración. Su valor está tanto en la visualización de los datos como en el recorrido técnico completo: modelado relacional, SPA responsive, API REST protegida, despliegue con contenedores y automatización de producción.
 
-The dataset used to design and test the application comes from the public Kaggle dataset **“Social Media and Mental Health”**.
+## 2. Problema que resuelve
 
----
+Una tabla de respuestas en bruto dificulta identificar distribuciones y comparar variables. La aplicación ofrece una capa visual que permite:
 
-## Key features
+- resumir el volumen de respuestas y el uso declarado de redes sociales;
+- comparar el tiempo medio de uso por grupos de edad;
+- observar la distribución por ocupación y plataformas utilizadas;
+- presentar promedios de indicadores como distracción, preocupación, comparación social, concentración, sueño o búsqueda de validación;
+- gestionar nuevas respuestas sin trabajar directamente sobre la base de datos.
 
-- **Authentication & authorization (JWT)**
-  - Secure login and protected routes
-- **Interactive analytics dashboard**
-  - KPI cards (e.g., respondents count, usage %, average distraction)
-  - Charts and summaries for demographics and platform usage
-- **Advanced filtering / exploration**
-  - Analyze trends by age group, gender, occupation, platforms, etc.
-- **Data management (authenticated users)**
-  - Create new survey records (“Ingresar registro”)
-  - Edit/delete records from a management table (“Modificar registro”)
-  - Records are user-scoped (each user sees/manages their own entries)
+El objetivo es facilitar una exploración descriptiva. La aplicación no realiza diagnóstico médico, predicción clínica ni demuestra relaciones causales entre el uso de redes sociales y la salud mental.
 
----
+## 3. Datos utilizados
 
-## Tech stack
+El proyecto parte del dataset público de Kaggle **Social Media and Mental Health**, incorporado como datos de demostración en `db/dashboard.sql`. El dump crea `dashboarddb`, carga las respuestas iniciales y las distribuye en un modelo relacional.
+
+Las entidades principales son:
+
+- **Respondent**: fecha, edad y género de la respuesta.
+- **Demographics**: situación sentimental y ocupacional.
+- **SocialMediaUsage**: uso de redes, tiempo diario, uso sin objetivo, distracción e inquietud.
+- **MentalHealthMetrics**: escalas declaradas de distracción, preocupación, concentración, comparación social, validación, estado de ánimo, interés y sueño.
+- **Platform** y **Organization**: relaciones muchos-a-muchos con las respuestas.
+- **Users**: cuentas de aplicación utilizadas para autenticar y asignar la propiedad de nuevos registros.
+
+Los datos se emplean únicamente con fines educativos y analíticos. Son respuestas autodeclaradas, contienen categorías heterogéneas y no deben interpretarse como una muestra clínica ni necesariamente representativa de la población. El dump versionado no incluye cuentas de acceso ni credenciales productivas.
+
+## 4. Decisiones técnicas
+
+### Frontend
+
+- **Vue 3 y Vue Router** para construir una SPA dividida en vistas y componentes reutilizables.
+- **Vite** para desarrollo local y generación del bundle de producción.
+- **CoreUI** para disponer de una base visual consistente.
+- **Chart.js y vue-chartjs** para representar barras, burbujas, distribución ocupacional e indicadores de bienestar.
+- **Diseño responsive mobile-first** para adaptar navegación, cards, gráficos, formularios y listados a móvil, tablet y escritorio.
+- Peticiones relativas a **`/api`**, lo que permite usar el mismo origen público y simplifica proxy, CORS y despliegue.
+
+El dashboard agregado permanece accesible sin iniciar sesión. Las vistas de alta y gestión consumen endpoints protegidos y envían el JWT en las peticiones.
 
 ### Backend
-- Java + Spring Boot (REST)
-- Spring Data JPA (Hibernate)
-- MySQL connector
-- JWT (io.jsonwebtoken)
 
-### Frontend
-- Vue (SPA)
-- Vite (dev server + build)
-- Vue Router
-- CoreUI (UI components/layout)
+- **Java 21 y Spring Boot** para estructurar la API REST y separar controladores, servicios y repositorios.
+- **Spring Data JPA/Hibernate** para mapear el modelo relacional y las asociaciones entre respuestas, métricas, plataformas y usuarios.
+- **MySQL 8.4** para almacenar información estructurada y ejecutar las consultas agregadas del dashboard.
+- **Spring Security y JWT** para mantener una API sin sesión y desacoplar la autenticación del frontend.
+- **Spring Boot Actuator** para health checks limitados a `health` e `info`.
 
----
+### Seguridad
 
-## Requirements
+La seguridad se ha reforzado con decisiones concretas:
 
-- **Java JDK** (use the version defined by the backend `pom.xml`)
-- **Maven**
-- **Node.js + npm**
-- **MySQL Server**
+- los endpoints públicos se limitan al login, Actuator controlado y datos agregados del dashboard;
+- `/api/respondents/**` requiere autenticación;
+- las respuestas de respondents usan DTOs y no serializan directamente las entidades JPA;
+- el campo de contraseña está excluido de la serialización como defensa adicional;
+- las operaciones por ID buscan el registro junto con el usuario autenticado, evitando que una cuenta gestione registros ajenos;
+- el login aplica un límite básico en memoria por IP y usuario normalizado;
+- MySQL no publica ningún puerto en el host;
+- frontend y backend solo se enlazan a loopback y quedan detrás del Nginx del VPS.
 
----
+Estas medidas reducen la superficie de exposición, pero no convierten el proyecto en un sistema exento de riesgos. Las limitaciones pendientes se detallan más adelante.
 
-## Installation
+### Despliegue y operación
 
-### 1) Clone the repository
+- **Docker Compose** ejecuta frontend, backend y MySQL en una red privada.
+- El frontend se compila con Node y se sirve desde un contenedor Nginx; el backend se construye y ejecuta con Java 21.
+- **Nginx en el host** actúa como reverse proxy y termina HTTPS con certificados de Let’s Encrypt.
+- **GitHub Actions** valida ambos proyectos, construye las imágenes y las publica en GHCR.
+- El despliegue por SSH usa imágenes etiquetadas con el SHA completo del commit.
+- Antes de actualizar servicios se genera un backup obligatorio de MySQL; el proceso se detiene si el dump falla o queda vacío.
+- Después del arranque se comprueban los health checks locales, el frontend público y un endpoint agregado de la API.
 
-```bash
-git clone https://github.com/JABejaranoVela/SocialMediaDashboard.git
-cd SocialMediaDashboard
+## 5. Arquitectura
+
+### Aplicación
+
+```text
+Usuario
+  ↓ HTTPS
+Nginx del VPS
+  ├── /      → Frontend Vue servido por Nginx interno
+  └── /api   → Backend Spring Boot
+                         ↓
+                      MySQL
 ```
 
-### 2) Database setup (MySQL)
+MySQL permanece únicamente en la red de Docker. En el host, frontend y backend se publican sobre `127.0.0.1`, sin exposición directa a Internet.
 
-1. Create a database (example name: `social_media_dashboard`).
-2. Run the SQL scripts located in the `db/` folder to create tables and (optionally) seed data.
+### CI/CD
 
-> Note: If you prefer, you can also import the dataset first into a staging table and then normalize it into relational tables (as described in the project documentation).
-
-### 3) Backend setup (Spring Boot)
-
-Go to the backend folder and configure the database connection and JWT secret in `application.properties` (or via environment variables):
-
-```bash
-cd dashboard-backend/app
+```text
+Push a main / ejecución manual
+  ↓
+GitHub Actions
+  ├── tests y package del backend
+  └── npm ci y build del frontend
+  ↓
+Build y publicación de imágenes en GHCR
+  ↓
+Deploy por SSH al VPS
+  ↓
+Backup MySQL → Docker Compose pull/up → health checks
 ```
 
-Run the backend:
+La primera versión del pipeline no realiza rollback automático. Un fallo deja el workflow marcado como fallido y conserva datos, backups e imágenes anteriores para facilitar el diagnóstico manual.
 
-```bash
-mvn spring-boot:run
-```
+## 6. Funcionalidades principales
 
-The backend is expected to run on:
+- Dashboard público con KPIs y métricas agregadas.
+- Gráficos de uso por edad, plataformas, ocupación e indicadores de bienestar.
+- Login mediante JWT.
+- Alta de nuevas respuestas autenticadas.
+- Listado, edición y eliminación de registros propios.
+- Control de propiedad aplicado en el backend, no únicamente en la interfaz.
+- Navegación y formularios adaptados a móvil, tablet y escritorio.
+- Health checks de frontend y backend.
+- Despliegue automatizado con backup previo de la base de datos.
 
-- `http://localhost:9090`
+## 7. Demo
 
-### 4) Frontend setup (Vue + Vite)
+La versión desplegada está disponible en:
 
-In a new terminal:
+**https://socialmedia.jabejarano.tech**
 
-```bash
-cd dashboard-frontend
-npm install
-npm run dev
-```
+El dashboard agregado puede consultarse públicamente. Las operaciones de gestión requieren una cuenta autenticada; el repositorio no publica usuarios ni contraseñas de demostración.
 
-The frontend will start the Vite dev server (usually on `http://localhost:5173`).
+La antigua versión en Netlify se conserva temporalmente como referencia o respaldo de la demo, pero el despliegue completo actual se ejecuta en el VPS.
 
-During development, the frontend is configured to proxy API calls:
+## 8. Ejecución local
 
-- Requests to `/api` → `http://localhost:9090`
+### Requisitos
 
----
+- Java 21
+- Node.js 22 y npm
+- MySQL 8, o Docker con Docker Compose
 
-## Usage
+### Opción A: stack completo con Docker Compose
 
-1. Start **MySQL**
-2. Start the **backend** (Spring Boot)
-3. Start the **frontend** (Vite)
-
-Then open the frontend in your browser and use the sidebar navigation:
-
-- **Inicio**: public dashboard overview
-- **Iniciar sesión**: login form
-- After login:
-  - **Ingresar registro**
-  - **Modificar registro**
-  - **Cerrar sesión**
-
-### Main routes (frontend)
-- `/dashboard` → main analytics dashboard
-- `/login` → authentication
-- `/register` → create a new record
-- `/edit` and `/edit-form` → record management / edit flow
-
----
-
-## Configuration
-
-### Backend (recommended)
-- Do not hardcode secrets in `application.properties` for production.
-- Use environment variables for:
-  - DB URL / username / password
-  - JWT secret
-
-### Frontend
-- The dev proxy is configured in `vite.config.js` so `/api` calls hit the backend locally.
-
----
-
-## Notes & limitations
-
-- The dataset is survey-based and intended for educational/analytical purposes.
-- This project is designed for local development and demonstration. If deploying publicly, review:
-  - secret management (JWT, DB credentials)
-  - CORS configuration
-  - HTTPS and production build strategy
-
----
-
-## Production-like Docker Compose stack
-
-The production Compose configuration runs three services on a private Docker network:
-
-- `frontend`: the Vue production build served by Nginx. Its internal Nginx proxies `/api/` to the backend so the complete stack also works locally through the frontend URL.
-- `backend`: the Spring Boot application running with the `prod` profile on port 9090 inside Docker.
-- `db`: MySQL 8 with persistent storage. MySQL has no host port and does not expose port 3306 publicly.
-
-The base Compose file publishes no host ports. The example override binds the frontend and backend exclusively to loopback (`127.0.0.1:8082` and `127.0.0.1:9091`), ready for a future host Nginx reverse proxy.
-
-### Configuration
-
-Create a local production environment file and replace every placeholder with strong, independent values:
+Desde la raíz del repositorio:
 
 ```powershell
 Copy-Item .env.prod.example .env.prod
 ```
 
-`.env.prod` is ignored by Git and must never be committed. `JWT_SECRET` must be long enough for the configured HMAC JWT algorithm; use at least 32 random bytes. Keep the MySQL and Spring datasource credentials aligned.
-
-### Build and run locally
-
-Use both Compose files for local access through loopback:
+Sustituye los valores de ejemplo por credenciales locales y ejecuta:
 
 ```powershell
-docker compose --env-file .env.prod -f docker-compose.prod.yml -f docker-compose.prod.override.example.yml config --quiet
-docker compose --env-file .env.prod -f docker-compose.prod.yml -f docker-compose.prod.override.example.yml build
-docker compose --env-file .env.prod -f docker-compose.prod.yml -f docker-compose.prod.override.example.yml up -d
-docker compose --env-file .env.prod -f docker-compose.prod.yml -f docker-compose.prod.override.example.yml ps
+docker compose --env-file .env.prod `
+  -f docker-compose.prod.yml `
+  -f docker-compose.prod.override.example.yml `
+  config --quiet
+
+docker compose --env-file .env.prod `
+  -f docker-compose.prod.yml `
+  -f docker-compose.prod.override.example.yml `
+  up -d --build
 ```
 
-Check the services:
+Servicios locales:
+
+- Frontend: `http://127.0.0.1:8082`
+- Backend Actuator: `http://127.0.0.1:9091/actuator/health`
+- API a través del frontend: `http://127.0.0.1:8082/api/dashboard/respondent/count`
+
+Para detenerlos sin eliminar la base de datos:
 
 ```powershell
-curl.exe -fsS http://127.0.0.1:9091/actuator/health
-curl.exe -fsS -I http://127.0.0.1:8082
-curl.exe -fsS http://127.0.0.1:8082/healthz
-curl.exe -fsS http://127.0.0.1:8082/api/dashboard/respondent/count
+docker compose --env-file .env.prod `
+  -f docker-compose.prod.yml `
+  -f docker-compose.prod.override.example.yml `
+  down
 ```
 
-Stop the stack without deleting its database volume:
+No utilices `down -v` si quieres conservar el volumen local de MySQL. `db/dashboard.sql` solo se ejecuta al inicializar un volumen vacío.
+
+### Opción B: desarrollo nativo
+
+1. Importa `db/dashboard.sql` en un MySQL local.
+2. Crea `dashboard-backend/app/.env` —ignorado por Git— con las variables de desarrollo, sin reutilizar secretos de producción:
+
+```properties
+SPRING_PROFILES_ACTIVE=dev
+DB_URL=jdbc:mysql://localhost:3306/dashboarddb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+DB_USER=usuario_local
+DB_PASSWORD=contraseña_local
+JWT_SECRET=clave_local_de_desarrollo_de_al_menos_32_bytes
+```
+
+3. Arranca el backend desde la raíz:
 
 ```powershell
-docker compose --env-file .env.prod -f docker-compose.prod.yml -f docker-compose.prod.override.example.yml down
+.\dashboard-backend\app\mvnw.cmd -f .\dashboard-backend\app\pom.xml spring-boot:run
 ```
 
-The file `db/dashboard.sql` is processed by the official MySQL image only when the database volume is empty. Restarting containers does not re-import it. Deleting the volume destroys local database data and causes the dump to be imported again on the next start.
+4. En otra terminal, arranca el frontend:
 
-This SQL dump is an initial deployment mechanism, not a migration system. Flyway or Liquibase should be introduced before production schema evolution. New databases initialized from the dump contain public demo survey data but no application user or administrator. Create production users outside Git through a controlled provisioning procedure.
-
-The Netlify site remains available as the original demo and can coexist as a fallback. The production deployment is available at `https://socialmedia.jabejarano.tech`.
-
----
-
-## Production CI/CD
-
-Pushes to `main` run `.github/workflows/deploy-production.yml`. The workflow can also be started manually with `workflow_dispatch` and serializes production runs without cancelling a deployment already in progress.
-
-The pipeline contains four stages:
-
-1. Backend validation with Java 21, Maven dependency caching, tests and packaging.
-2. Frontend validation with Node.js 22, `npm ci` and the Vite production build.
-3. Build and push of the backend and frontend images to GHCR using the full commit SHA, a 12-character SHA and `main` tags.
-4. SSH deployment of the full-SHA images to the VPS after a mandatory MySQL backup.
-
-The deployed image references are always the immutable full-SHA tags:
-
-- `ghcr.io/jabejaranovela/social-media-dashboard-backend:<sha>`
-- `ghcr.io/jabejaranovela/social-media-dashboard-frontend:<sha>`
-
-GitHub Actions publishes and temporarily pulls the images with the repository `GITHUB_TOKEN`; no separate GHCR token secret is required.
-
-### Required GitHub secrets
-
-- `VPS_HOST`: VPS hostname or IP address.
-- `VPS_USER`: SSH deployment user (`deploy` in production).
-- `VPS_SSH_KEY`: private SSH key used only by the workflow.
-- `VPS_KNOWN_HOSTS`: pinned SSH host key entry. The workflow enforces strict host-key checking.
-
-The production environment values remain in `/srv/apps/social-media-dashboard/.env.prod` and are never generated by CI. Each successful deployment atomically updates `.env.deploy` with the exact backend and frontend image tags. `.env.deploy` contains no secrets, remains on the VPS for manual Compose operations and must not be deleted after deployment.
-
-### Predeploy MySQL backup
-
-Before pulling or starting new images, `scripts/deploy-production.sh` writes a dump to:
-
-```text
-/srv/backups/social-media-dashboard/mysql/socialmedia_predeploy_<timestamp>_<short-sha>.sql
+```powershell
+cd dashboard-frontend
+npm ci
+npm run dev
 ```
 
-The dump is first written to a hidden `.sql.tmp` file. Deployment stops if `mysqldump` fails or the file is empty; only a valid dump is moved to its final name. Backups use `--single-transaction`, `--quick` and the mandatory `--no-tablespaces` option, which avoids the MySQL 8 `PROCESS` privilege requirement.
+Vite sirve la SPA normalmente en `http://localhost:5173` y redirige `/api` a `http://localhost:9090` durante el desarrollo.
 
-### Deployment checks and diagnostics
+El dump no crea usuarios. El dashboard público funcionará después de la importación, pero las vistas protegidas necesitan una cuenta local creada mediante un procedimiento controlado y fuera de Git.
 
-The remote script verifies a clean checkout, performs a fast-forward-only update and confirms that the VPS commit equals the workflow SHA. It then validates Compose, creates the backup, pulls images and starts services without local builds.
+## 9. Seguridad aplicada y limitaciones
 
-After startup it checks:
+Además de JWT, DTOs y ownership, el despliegue utiliza secretos fuera del repositorio, credenciales Docker temporales, verificación estricta de la clave SSH del VPS, imágenes inmutables por SHA y backups MySQL con permisos restringidos.
 
-- `http://127.0.0.1:9091/actuator/health`
-- `http://127.0.0.1:8082/healthz`
-- `https://socialmedia.jabejarano.tech`
-- `https://socialmedia.jabejarano.tech/api/dashboard/respondent/count`
+Aspectos pendientes:
 
-On failure, inspect the failed workflow step, the printed `docker compose ps` output when available, and on the VPS use the same `.env.prod` plus `.env.deploy` files to inspect Compose logs. Fix the cause and rerun the failed workflow with `workflow_dispatch`, or push a new commit to `main`.
+- reforzar el rate limiting en el Nginx del host; el actual es local al proceso y se reinicia con la aplicación;
+- rotar o eliminar manualmente cualquier cuenta antigua que hubiera sido cargada en una base ya inicializada;
+- ampliar la validación de entrada de los DTOs;
+- adoptar Flyway o Liquibase para versionar cambios de esquema;
+- revisar periódicamente dependencias y cabeceras de seguridad;
+- definir retención automatizada y pruebas periódicas de restauración de backups.
 
-This first CI/CD version has no automatic rollback. A failed health check marks the workflow as failed but preserves the database, backups, previous images and generated `.env.deploy`. Never delete these production assets while diagnosing a deployment:
+## 10. Conclusiones
 
-- `/srv/data/social-media-dashboard/mysql`
-- `/srv/backups/social-media-dashboard/mysql`
-- `/srv/apps/social-media-dashboard/.env.prod`
-- `/srv/apps/social-media-dashboard/.env.deploy`
+El proyecto demuestra cómo convertir respuestas de encuesta normalizadas en una aplicación full-stack operable: una SPA responsive, una API REST protegida, persistencia relacional y un flujo de despliegue reproducible sobre un VPS.
 
-Container image cleanup is limited to dangling images. Backup retention, automatic rollback, schema migrations and blocking npm vulnerability audits remain separate follow-up work; the current known npm findings do not block this workflow.
+Las decisiones más relevantes fueron separar los agregados públicos de las operaciones privadas, tratar el backend como autoridad de permisos, utilizar DTOs en los límites de la API y desplegar imágenes inmutables con backup y health checks. Esto evita que la calidad del proyecto dependa únicamente de la interfaz visual.
 
----
+Desde el punto de vista de los datos, el dashboard permite comparar patrones declarados de uso, demografía y bienestar de forma más clara que el dump original. Sus resultados deben entenderse como descriptivos: la procedencia de encuesta, la falta de control experimental y la calidad irregular de algunas categorías impiden extraer causalidad o conclusiones clínicas.
 
-## Application security model
+## 11. Próximas mejoras
 
-The backend is the authority for access control; frontend route guards are only a user-interface convenience. Public unauthenticated application endpoints are limited to:
+- Migraciones reproducibles con Flyway o Liquibase.
+- Bean Validation y mensajes de error estructurados en la API.
+- Tests end-to-end para login, formularios y dashboard.
+- Observabilidad centralizada de logs y métricas.
+- Rate limiting y cabeceras CSP/HSTS reforzadas en el perímetro.
+- Automatización de actualizaciones con Dependabot o Renovate.
+- Roles y permisos más granulares.
+- Filtros analíticos, exportación de datos y mejoras adicionales de UX.
+- Estrategia probada de restauración y rollback.
 
-- `POST /api/auth/login`
-- `GET /api/dashboard/**` (aggregate dashboard data)
-- `GET /api/demographics/dashboard/occupation-status-pie` (aggregate chart data)
-- `GET /actuator/health` and `GET /actuator/info`
+## Licencia
 
-All other API endpoints require a valid JWT. In particular, `/api/respondents/**` is private and scopes reads, updates and deletes to the authenticated username. Respondent responses use an explicit DTO and expose only `username` and `role` from the owner; password hashes are never part of the response model.
-
-Login protection keeps an in-memory counter per client IP and normalized username. Five failed attempts within 15 minutes block that key for 15 minutes and return HTTP 429 with `Retry-After`. A successful login clears the counter. The map is bounded and cleans expired entries opportunistically. This protection is local to one backend process, resets on restart and uses the last `X-Forwarded-For` hop because production only exposes the backend through the trusted host Nginx on loopback. Nginx must overwrite or append the real remote address consistently. If the backend is ever exposed directly, forwarded headers must not be trusted without a trusted-proxy policy. Add Nginx host rate limiting as the durable perimeter control in a later VPS phase.
-
-The versioned SQL dump no longer provisions the previous demo administrator. It also detaches demo survey records from application users, which is valid because `respondent.user_id` is nullable. This affects only newly initialized MySQL volumes: it does not alter the existing VPS database. Any previously loaded production administrator must be rotated or removed manually before continued production use. Do not store its replacement password or hash in Git.
-
-Schema changes still rely on an initialization dump and `ddl-auto=validate`; adopting Flyway or Liquibase remains a required follow-up before evolving the production schema.
-
----
-
-## Resources
-
-- Kaggle dataset (name): `Social Media and Mental Health`
-- REST API + JWT authentication
-- Vue + Vite SPA architecture
-
----
-
-## License
-
-This project is licensed under the MIT License. You are free to use, modify and distribute it under the terms of that license.
+Este proyecto se distribuye bajo los términos de la licencia MIT.
