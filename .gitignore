@@ -3,6 +3,8 @@
 .env.prod
 .env.prod.local
 .env.deploy
+*.sql
+*.sql.tmp
 
 # Build output and dependencies
 **/target/
