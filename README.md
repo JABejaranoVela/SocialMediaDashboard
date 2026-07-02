@@ -219,5 +219,4 @@ The Netlify site remains the current demo and can coexist temporarily as a fallb
 
 ## License
 
-No license file is currently included in this repository.
-If you plan to open-source it, consider adding a license (e.g., MIT) and including a `LICENSE` file at the repository root.
+This project is licensed under the MIT License. You are free to use, modify and distribute it under the terms of that license.
