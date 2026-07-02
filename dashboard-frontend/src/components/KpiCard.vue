@@ -13,16 +13,18 @@ defineProps(['label', 'value', 'color'])
 .kpi-card {
   border-left: 5px solid #339af0;
   background: #fff;
-  padding: 1rem 1.5rem;
+  min-width: 0;
+  padding: 1rem;
   border-radius: 8px;
-  margin: 0.5rem;
+  margin: 0;
   box-shadow: 0 2px 6px #0001;
 }
 .kpi-value {
-  font-size: 2rem;
+  font-size: clamp(1.6rem, 6vw, 2rem);
   font-weight: bold;
 }
 .kpi-label {
   color: #666;
+  overflow-wrap: anywhere;
 }
 </style>

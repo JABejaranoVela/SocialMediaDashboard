@@ -31,12 +31,12 @@
         {{ registro.timestamp ? (new Date(registro.timestamp)).toLocaleDateString() : '-' }}
       </div>
       <div class="edit-cell acciones" data-label="Modificar" @click.stop>
-        <button class="edit-btn" @click="editarRegistro(registro)">
+        <button class="edit-btn" type="button" aria-label="Modificar registro" title="Modificar registro" @click="editarRegistro(registro)">
           ✎
         </button>
       </div>
       <div class="edit-cell acciones" data-label="Eliminar" @click.stop>
-        <button class="delete-btn" @click="openDeleteModal(registro)">✕</button>
+        <button class="delete-btn" type="button" aria-label="Eliminar registro" title="Eliminar registro" @click="openDeleteModal(registro)">✕</button>
       </div>
 
       <!-- Móvil: tabla 2xN + fila final centrada -->
@@ -59,19 +59,19 @@
           <div class="edit-value">{{ registro.timestamp ? (new Date(registro.timestamp)).toLocaleDateString() : '-' }}</div>
         </div>
         <div class="edit-mobile-actions">
-          <button class="edit-btn" @click.stop="editarRegistro(registro)">✎</button>
-          <button class="delete-btn" @click.stop="openDeleteModal(registro)">✕</button>
+          <button class="edit-btn" type="button" aria-label="Modificar registro" title="Modificar registro" @click.stop="editarRegistro(registro)">✎</button>
+          <button class="delete-btn" type="button" aria-label="Eliminar registro" title="Eliminar registro" @click.stop="openDeleteModal(registro)">✕</button>
         </div>
       </div>
     </div>
 
     <!-- MODAL DE BORRADO: SIEMPRE FUERA DEL v-for Y DE LAS ROWS -->
-    <div v-if="showDeleteModal" class="modal-mask">
-      <div class="modal">
-        <h3 style="margin-bottom: 1.4rem; color: #222;">¿Seguro que quieres borrar este registro?</h3>
+    <div v-if="showDeleteModal" class="modal-mask" @click.self="closeDeleteModal">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+        <h3 id="delete-modal-title">¿Seguro que quieres borrar este registro?</h3>
         <div class="modal-btn-row">
-          <button class="modal-delete-btn" @click="confirmDelete">Borrar</button>
-          <button class="modal-cancel-btn" @click="closeDeleteModal">Cancelar</button>
+          <button class="modal-delete-btn" type="button" @click="confirmDelete">Borrar</button>
+          <button class="modal-cancel-btn" type="button" @click="closeDeleteModal">Cancelar</button>
         </div>
       </div>
     </div>
@@ -381,5 +381,134 @@ async function confirmDelete() {
   color: #222;
   font-size: 1.18rem;
   font-weight: 600;
+}
+</style>
+
+<style scoped>
+.edit-table-container {
+  width: 100%;
+  max-width: 75rem;
+  min-width: 0;
+  margin: 1rem auto 0;
+  padding: 0;
+  overflow: visible;
+}
+
+.edit-header-table,
+.edit-cell { display: none; }
+
+.edit-row {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border: 1px solid #dde6f1;
+  border-radius: 0.75rem;
+  background: #f7faff;
+  box-shadow: 0 0.125rem 0.5rem rgba(80, 110, 145, 0.12);
+}
+
+.edit-mobile-fields {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+
+.edit-fields-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.15rem;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 1rem;
+}
+
+.edit-label {
+  margin-top: 0.55rem;
+  color: #2476d2;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.edit-value {
+  min-width: 0;
+  color: #222;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.edit-mobile-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.edit-btn,
+.delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  margin: 0;
+  padding: 0;
+}
+
+.modal-mask { padding: 1rem; }
+
+.modal {
+  width: min(100%, 24rem);
+  min-width: 0;
+  max-width: 100%;
+  max-height: calc(100dvh - 2rem);
+  padding: 1.25rem;
+}
+
+.modal h3 {
+  margin: 0 0 1.25rem;
+  color: #222;
+  font-size: 1.1rem;
+}
+
+.modal-btn-row {
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0;
+}
+
+.modal-delete-btn,
+.modal-cancel-btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.75rem;
+}
+
+@media (min-width: 576px) {
+  .edit-table-container { margin-top: 1.5rem; }
+  .edit-fields-grid { grid-template-columns: minmax(7rem, 0.8fr) minmax(0, 1.2fr); gap: 0.35rem 0.75rem; }
+  .edit-label { margin: 0; text-align: right; }
+  .modal-btn-row { flex-direction: row; }
+  .modal-delete-btn,
+  .modal-cancel-btn { width: auto; min-width: 8rem; }
+}
+
+@media (min-width: 1200px) {
+  .edit-table-container { padding-inline: 1rem; overflow-x: auto; }
+  .edit-header-table,
+  .edit-row {
+    display: grid;
+    grid-template-columns: 0.6fr 2fr 0.8fr 1fr 1.6fr 1.3fr 0.8fr 0.8fr;
+    min-width: 56rem;
+  }
+  .edit-row { margin: 0; padding: 0.85rem 0.7rem; border: 0; border-bottom: 1px solid #eee; border-radius: 0; box-shadow: none; }
+  .edit-cell { display: flex; min-width: 0; overflow-wrap: anywhere; }
+  .edit-mobile-fields { display: none; }
 }
 </style>

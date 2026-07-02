@@ -13,13 +13,13 @@ defineProps(['label', 'value', 'color'])
 .social-kpi-card {
   border-left: 6px solid #999;
   background: #fff;
-  padding: 1.1rem 1.5rem;
+  min-width: 0;
+  height: 100%;
+  padding: 1rem;
   border-radius: 10px;
-  margin: 0.5rem 0;
+  margin: 0;
   box-shadow: 0 2px 6px #0001;
-  min-width: 120px;
   width: 100%;
-  max-width: 330px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -30,25 +30,18 @@ defineProps(['label', 'value', 'color'])
   font-weight: 500;
   color: #444;
   font-size: 1rem;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .social-kpi-value {
-  font-size: 1.4rem;
+  font-size: clamp(1.13rem, 5vw, 1.4rem);
   font-weight: bold;
   color: #333;
-  margin-left: 1.5em;
+  margin-left: 0.7em;
   white-space: nowrap;
 }
 
-@media (max-width: 700px) {
-  .social-kpi-card {
-    padding: 0.7rem 0.9rem;
-    min-width: 0;
-    max-width: 100%;
-  }
-  .social-kpi-value {
-    font-size: 1.13rem;
-    margin-left: 0.7em;
-  }
+@media (min-width: 768px) {
+  .social-kpi-card { padding: 1.1rem 1.25rem; }
+  .social-kpi-value { margin-left: 1rem; }
 }
 </style>

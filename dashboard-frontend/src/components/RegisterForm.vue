@@ -157,10 +157,10 @@
 
         <button type="submit">Registrar</button>
         <!-- MODAL DE ÉXITO -->
-        <div v-if="showSuccessModal" class="success-modal-mask">
-            <div class="success-modal">
-                <h2>Formulario enviado correctamente</h2>
-                <button @click="showSuccessModal = false" class="success-close-btn">Cerrar</button>
+        <div v-if="showSuccessModal" class="success-modal-mask" @click.self="showSuccessModal = false">
+            <div class="success-modal" role="dialog" aria-modal="true" aria-labelledby="register-success-title">
+                <h2 id="register-success-title">Formulario enviado correctamente</h2>
+                <button type="button" @click="showSuccessModal = false" class="success-close-btn">Cerrar</button>
             </div>
         </div>
     </form>
@@ -430,7 +430,7 @@ button[type="submit"]:hover {
 }
 @media (max-width: 600px) {
   .register-form {
-    max-width: 100vw;
+    max-width: 100%;
     padding: 1.2rem 0.4rem 1.3rem 0.4rem;
     border-radius: 0;
     box-shadow: none;
@@ -485,3 +485,5 @@ button[type="submit"]:hover {
 }
 
 </style>
+
+<style scoped src="../styles/respondent-form.css"></style>

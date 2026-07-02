@@ -1,30 +1,33 @@
 <template>
-  <div>
-    <Doughnut :data="chartData" :options="chartOptions" v-if="chartData" />
+  <div class="chart-wrapper">
+    <Doughnut v-if="chartData" :data="chartData" :options="chartOptions" />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { Doughnut } from 'vue-chartjs'
-import { Chart, ArcElement, Tooltip, Legend } from 'chart.js'
-Chart.register(ArcElement, Tooltip, Legend)
+import { Chart, ArcElement, Tooltip, Legend, Title } from 'chart.js'
+
+Chart.register(ArcElement, Tooltip, Legend, Title)
 
 const chartData = ref(null)
-
-const occupationColors = [
-  '#6495ED',  // University Student (azul)
-  '#40E0D0',  // School Student (turquesa)
-  '#4B0082',  // Salaried Employee (índigo)
-  '#FFB300',  // Unemployed (amarillo)
-  '#8A2BE2',  // Freelancer (violeta)
-  '#2E8B57'   // Business Owner (verde)
-]
-
+const occupationColors = ['#6495ED', '#40E0D0', '#4B0082', '#FFB300', '#8A2BE2', '#2E8B57']
 const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
   plugins: {
-    legend: { display: true, position: 'right' },
-    title: { display: true, text: 'Ocupación de los entrevistados' }
+    legend: {
+      display: true,
+      position: 'bottom',
+      labels: { boxWidth: 14, padding: 12, usePointStyle: true }
+    },
+    title: {
+      display: true,
+      text: 'Ocupación de los entrevistados',
+      font: { size: 15, weight: 'bold' },
+      padding: { bottom: 12 }
+    }
   }
 }
 
@@ -40,3 +43,16 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.chart-wrapper {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  height: clamp(18rem, 78vw, 23rem);
+}
+
+@media (min-width: 768px) {
+  .chart-wrapper { height: 23rem; }
+}
+</style>

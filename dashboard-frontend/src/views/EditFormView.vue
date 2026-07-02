@@ -160,10 +160,10 @@
             <button type="button" class="action-btn back-btn" @click="goBack">Volver</button>
         </div>
         <!-- MODAL DE ÉXITO -->
-        <div v-if="showSuccessModal" class="success-modal-mask">
-            <div class="success-modal">
-                <h2>Registro actualizado correctamente</h2>
-                <button @click="showSuccessModal = false" class="success-close-btn">Cerrar</button>
+        <div v-if="showSuccessModal" class="success-modal-mask" @click.self="showSuccessModal = false">
+            <div class="success-modal" role="dialog" aria-modal="true" aria-labelledby="edit-success-title">
+                <h2 id="edit-success-title">Registro actualizado correctamente</h2>
+                <button type="button" @click="showSuccessModal = false" class="success-close-btn">Cerrar</button>
             </div>
         </div>
     </form>
@@ -483,3 +483,5 @@ select {
     color: #1a2341;
 }
 </style>
+
+<style scoped src="../styles/respondent-form.css"></style>

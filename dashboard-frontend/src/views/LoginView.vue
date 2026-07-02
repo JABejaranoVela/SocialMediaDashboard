@@ -49,10 +49,12 @@ const login = async () => {
 
 <style scoped>
 .login-container {
-  max-width: 350px;
-  margin: 3rem auto;
+  width: 100%;
+  max-width: 22rem;
+  min-width: 0;
+  margin: clamp(1rem, 8vh, 3rem) auto;
   background: #fff;
-  padding: 2.2rem 2rem 1.3rem 2rem;
+  padding: 1.25rem;
   border-radius: 16px;
   box-shadow: 0 2px 20px #0002;
 }
@@ -73,6 +75,7 @@ const login = async () => {
 }
 .form-group input {
   width: 100%;
+  min-height: 2.75rem;
   padding: 0.6rem 0.7rem;
   border-radius: 8px;
   border: 1px solid #b2b6cc;
@@ -86,7 +89,8 @@ button[type="submit"] {
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 0.8rem 0;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
   font-size: 1.07rem;
   font-weight: 600;
   cursor: pointer;
@@ -104,5 +108,9 @@ button[type="submit"]:hover {
   margin-top: 0.4rem;
   text-align: center;
   font-size: 1rem;
+}
+
+@media (min-width: 576px) {
+  .login-container { padding: 2rem; }
 }
 </style>

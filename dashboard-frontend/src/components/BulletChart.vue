@@ -31,10 +31,11 @@ const props = defineProps({
   background: #fff;
   border-radius: 13px;
   box-shadow: 0 2px 9px #0002;
-  padding: 1.3rem 2rem 1.6rem 2rem;
-  margin: 1.5rem 0;
+  min-width: 0;
+  height: 100%;
+  padding: 1.15rem clamp(0.8rem, 4vw, 1.5rem) 1.4rem;
+  margin: 0;
   width: 100%;
-  max-width: 420px;
 }
 .bullet-title {
   font-size: 1.05rem;
@@ -44,7 +45,7 @@ const props = defineProps({
   color: #222;
 }
 .bullet-value {
-  font-size: 2.6rem;
+  font-size: clamp(2rem, 10vw, 2.6rem);
   font-weight: bold;
   color: #484e63;
   margin-bottom: 1.1rem;
@@ -63,7 +64,7 @@ const props = defineProps({
   border-radius: 10px;
   position: relative;
   overflow: hidden;
-  min-width: 140px;
+  min-width: 0;
 }
 .bullet-bar-fg {
   position: absolute;

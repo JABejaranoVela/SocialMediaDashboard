@@ -54,7 +54,11 @@ onMounted(async () => {
           callback: function(value) {
             return data.labels[value - 1] || ''
           },
-          stepSize: 1
+          stepSize: 1,
+          autoSkip: true,
+          maxRotation: 45,
+          minRotation: 0,
+          font: { size: 10 }
         },
         title: { display: false }
       },
@@ -66,7 +70,7 @@ onMounted(async () => {
         display: true,
         text: 'Uso de plataformas por número de usuarios',
         align: 'center',
-        font: { size: 16, weight: 'bold' },
+        font: { size: 14, weight: 'bold' },
         padding: { top: 10, bottom: 15 }
       },
       tooltip: {
@@ -84,16 +88,14 @@ onMounted(async () => {
 
 <style scoped>
 .chart-wrapper {
+  position: relative;
   width: 100%;
-  max-width: 1000px;
-  height: clamp(200px, 34vw, 360px);
+  min-width: 0;
+  height: clamp(15rem, 70vw, 20rem);
   margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  padding: 0 clamp(0.2rem, 1.4vw, 0.8rem);
-  min-height: 200px;
-  margin-top: 10%;
+}
+
+@media (min-width: 768px) {
+  .chart-wrapper { height: 20rem; }
 }
 </style>

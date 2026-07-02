@@ -21,7 +21,7 @@ const chartOptions = {
       text: 'Uso medio diario de redes sociales según grupo de edad',
       align: 'center',
       font: {
-        size: 18,
+        size: 14,
         weight: 'bold'
       },
       padding: {
@@ -36,7 +36,7 @@ const chartOptions = {
         display: true,
         text: 'Minutos promedio por día',
         font: {
-          size: 15,
+          size: 12,
           weight: 'bold'
         }
       }
@@ -46,7 +46,7 @@ const chartOptions = {
         display: true,
         text: 'Rango de edad',
         font: {
-          size: 15,
+          size: 12,
           weight: 'bold'
         }
       }
@@ -70,16 +70,11 @@ onMounted(async () => {
 
 <style scoped>
 .chart-wrapper {
+  position: relative;
   width: 100%;
-  max-width: 1000px;
+  min-width: 0;
   margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: clamp(220px, 36vw, 360px);
-  min-height: 220px;
-  padding: 0 clamp(0.2rem, 1.2vw, 0.8rem);
-  box-sizing: border-box;
+  height: clamp(16rem, 75vw, 21rem);
 }
 
 /* Asegura que el canvas siempre ocupe todo el contenedor */
@@ -89,7 +84,9 @@ onMounted(async () => {
   max-width: 100% !important;
   max-height: 100% !important;
   min-width: 0 !important;
-  min-height: 0 !important;
-  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .chart-wrapper { height: 21rem; }
 }
 </style>
