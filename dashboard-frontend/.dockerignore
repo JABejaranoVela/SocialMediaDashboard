@@ -1,9 +1,9 @@
-target/
+node_modules/
+dist/
 .git/
 .gitignore
 .vscode/
 .idea/
-*.iml
 *.log
 .env
 .env.*

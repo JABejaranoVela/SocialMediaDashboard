@@ -155,6 +155,60 @@ Then open the frontend in your browser and use the sidebar navigation:
 
 ---
 
+## Production-like Docker Compose stack
+
+The production Compose configuration runs three services on a private Docker network:
+
+- `frontend`: the Vue production build served by Nginx. Its internal Nginx proxies `/api/` to the backend so the complete stack also works locally through the frontend URL.
+- `backend`: the Spring Boot application running with the `prod` profile on port 9090 inside Docker.
+- `db`: MySQL 8 with persistent storage. MySQL has no host port and does not expose port 3306 publicly.
+
+The base Compose file publishes no host ports. The example override binds the frontend and backend exclusively to loopback (`127.0.0.1:8082` and `127.0.0.1:9091`), ready for a future host Nginx reverse proxy.
+
+### Configuration
+
+Create a local production environment file and replace every placeholder with strong, independent values:
+
+```powershell
+Copy-Item .env.prod.example .env.prod
+```
+
+`.env.prod` is ignored by Git and must never be committed. `JWT_SECRET` must be long enough for the configured HMAC JWT algorithm; use at least 32 random bytes. Keep the MySQL and Spring datasource credentials aligned.
+
+### Build and run locally
+
+Use both Compose files for local access through loopback:
+
+```powershell
+docker compose --env-file .env.prod -f docker-compose.prod.yml -f docker-compose.prod.override.example.yml config --quiet
+docker compose --env-file .env.prod -f docker-compose.prod.yml -f docker-compose.prod.override.example.yml build
+docker compose --env-file .env.prod -f docker-compose.prod.yml -f docker-compose.prod.override.example.yml up -d
+docker compose --env-file .env.prod -f docker-compose.prod.yml -f docker-compose.prod.override.example.yml ps
+```
+
+Check the services:
+
+```powershell
+curl.exe -fsS http://127.0.0.1:9091/actuator/health
+curl.exe -fsS -I http://127.0.0.1:8082
+curl.exe -fsS http://127.0.0.1:8082/healthz
+curl.exe -fsS http://127.0.0.1:8082/api/dashboard/respondent/count
+```
+
+Stop the stack without deleting its database volume:
+
+```powershell
+docker compose --env-file .env.prod -f docker-compose.prod.yml -f docker-compose.prod.override.example.yml down
+```
+
+The file `db/dashboard.sql` is processed by the official MySQL image only when the database volume is empty. Restarting containers does not re-import it. Deleting the volume destroys local database data and causes the dump to be imported again on the next start.
+
+This SQL dump is an initial deployment mechanism, not a migration system. Flyway or Liquibase should be introduced before production schema evolution. The current dump also contains a demo `admin` account with a BCrypt password hash; review and replace that credential before any real deployment.
+
+The Netlify site remains the current demo and can coexist temporarily as a fallback while the future VPS deployment is validated. VPS directories, DNS for `socialmedia.jabejarano.tech`, host Nginx, Certbot, MySQL backups and GitHub Actions CI/CD are deliberately outside this phase.
+
+---
+
 ## Resources
 
 - Kaggle dataset (name): `Social Media and Mental Health`
