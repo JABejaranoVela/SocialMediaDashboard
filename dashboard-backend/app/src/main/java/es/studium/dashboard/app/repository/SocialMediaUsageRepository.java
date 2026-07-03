@@ -19,6 +19,8 @@ public interface SocialMediaUsageRepository extends JpaRepository<SocialMediaUsa
     List<SocialMediaUsage> findAllByRespondent_AgeBetweenAndUsesSocialMedia(Integer minAge, Integer maxAge,
             String usesSocialMedia);
 
+    List<SocialMediaUsage> findAllByRespondent_AgeBetween(Integer minAge, Integer maxAge);
+
     @Query("SELECT AVG(s.aimlessUsageFrequency) FROM SocialMediaUsage s")
     Double avgAimlessUsageFrequency();
 

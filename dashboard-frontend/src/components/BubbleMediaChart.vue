@@ -8,6 +8,7 @@
 import { ref, onMounted } from 'vue'
 import { Bubble } from 'vue-chartjs'
 import { Chart, LinearScale, PointElement, Tooltip, Legend, Title } from 'chart.js'
+import { getCategoryLabel, normalizeAggregatedSeries } from '../catalogs/respondentCatalogs.js'
 Chart.register(LinearScale, PointElement, Tooltip, Legend, Title)
 
 const chartData = ref(null)
@@ -16,6 +17,7 @@ const chartOptions = ref({})
 onMounted(async () => {
   const resp = await fetch('/api/dashboard/platform/bubble-count')
   const data = await resp.json()
+  const normalized = normalizeAggregatedSeries('platform', data.labels, data.counts)
 
   // Colores corporativos solo para las plataformas presentes
   const platformColors = {
@@ -29,14 +31,14 @@ onMounted(async () => {
     Twitter: '#1DA1F2',
     YouTube: '#FF0000'
   }
-  const backgroundColors = data.labels.map(p => platformColors[p] || '#888888')
+  const backgroundColors = normalized.labels.map(p => platformColors[p] || '#888888')
 
   const datasets = [{
     label: 'Usuarios',
-    data: data.labels.map((platform, idx) => ({
+    data: normalized.labels.map((platform, idx) => ({
       x: idx + 1,
       y: 0.5,
-      r: Math.sqrt(data.counts[idx]) * 2.5
+      r: Math.sqrt(normalized.values[idx]) * 2.5
     })),
     backgroundColor: backgroundColors
   }]
@@ -49,10 +51,11 @@ onMounted(async () => {
       x: {
         type: 'linear',
         min: 0,
-        max: data.labels.length + 1,
+        max: normalized.labels.length + 1,
         ticks: {
           callback: function(value) {
-            return data.labels[value - 1] || ''
+            const valueAtTick = normalized.labels[value - 1]
+            return valueAtTick ? getCategoryLabel('platform', valueAtTick) : ''
           },
           stepSize: 1,
           autoSkip: true,
@@ -77,7 +80,7 @@ onMounted(async () => {
         callbacks: {
           label: function(context) {
             const idx = context.dataIndex
-            return `${data.labels[idx]}: ${data.counts[idx]} usuarios`
+            return `${getCategoryLabel('platform', normalized.labels[idx])}: ${normalized.values[idx]} usuarios`
           }
         }
       }

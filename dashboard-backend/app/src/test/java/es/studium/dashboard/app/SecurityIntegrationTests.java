@@ -4,8 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import es.studium.dashboard.app.auth.JwtUtil;
 import es.studium.dashboard.app.auth.Users;
 import es.studium.dashboard.app.auth.UsersRepository;
+import es.studium.dashboard.app.Controllers.DashboardController;
 import es.studium.dashboard.app.model.Respondent;
+import es.studium.dashboard.app.model.SocialMediaUsage;
 import es.studium.dashboard.app.repository.RespondentRepository;
+import es.studium.dashboard.app.repository.OrganizationRepository;
+import es.studium.dashboard.app.repository.PlatformRepository;
+import es.studium.dashboard.app.repository.SocialMediaUsageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,14 +40,14 @@ class SecurityIntegrationTests {
     private static final String UPDATE_BODY = """
             {
               "age": 42,
-              "gender": "Test",
+              "gender": "Male",
               "demographics": {
                 "relationshipStatus": "Single",
-                "occupationStatus": "Employed"
+                "occupationStatus": "Salaried Worker"
               },
               "socialMediaUsage": {
                 "usesSocialMedia": "Yes",
-                "dailyAverageTime": "1-2 hours",
+                "dailyAverageTime": "Between 1 and 2 hours",
                 "aimlessUsageFrequency": 1,
                 "distractionFrequency": 2,
                 "restlessnessFrequency": 3
@@ -69,6 +74,12 @@ class SecurityIntegrationTests {
     private UsersRepository usersRepository;
     @Autowired
     private RespondentRepository respondentRepository;
+    @Autowired
+    private OrganizationRepository organizationRepository;
+    @Autowired
+    private PlatformRepository platformRepository;
+    @Autowired
+    private SocialMediaUsageRepository socialMediaUsageRepository;
     @Autowired
     private JwtUtil jwtUtil;
     @Autowired
@@ -147,6 +158,70 @@ class SecurityIntegrationTests {
     }
 
     @Test
+    void authenticatedCreateAcceptsCanonicalOrganizationAndPlatform() throws Exception {
+        String canonicalBody = UPDATE_BODY
+                .replace("\"organizationName\": \"\"", "\"organizationName\": \"Company\"")
+                .replace("\"platforms\": []", "\"platforms\": [\"Facebook\"]");
+
+        mockMvc.perform(post("/api/respondents")
+                        .header("Authorization", bearer(userA))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(canonicalBody))
+                .andExpect(status().isCreated());
+
+        assertThat(organizationRepository.findByOrganizationName("Company")).isPresent();
+        assertThat(platformRepository.findByPlatformName("Facebook")).isPresent();
+    }
+
+    @Test
+    void createAndUpdateRejectNonCanonicalAndPlaceholderValues() throws Exception {
+        String[] invalidCreateBodies = {
+                UPDATE_BODY.replace("\"Male\"", "\"Masculino\""),
+                UPDATE_BODY.replace("\"Salaried Worker\"", "\"Trabajador\""),
+                UPDATE_BODY.replace("\"Yes\"", "\"Sí\""),
+                UPDATE_BODY.replace("\"Between 1 and 2 hours\"", "\"Entre 1 y 2 horas\""),
+                UPDATE_BODY.replace("\"Male\"", "\"string\"")
+        };
+
+        for (String body : invalidCreateBodies) {
+            mockMvc.perform(post("/api/respondents")
+                            .header("Authorization", bearer(userA))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Valor no canónico")));
+        }
+
+        mockMvc.perform(put("/api/respondents/{id}", respondentA.getRespondentId())
+                        .header("Authorization", bearer(userA))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(UPDATE_BODY.replace("\"Single\"", "\"Soltero\"")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void invalidCatalogNamesAreRejectedWithoutCreatingRows() throws Exception {
+        long platformsBefore = platformRepository.count();
+        long organizationsBefore = organizationRepository.count();
+
+        mockMvc.perform(post("/api/respondents")
+                        .header("Authorization", bearer(userA))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(UPDATE_BODY.replace("\"platforms\": []", "\"platforms\": [\"string\"]")))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/api/respondents")
+                        .header("Authorization", bearer(userA))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(UPDATE_BODY.replace("\"organizationName\": \"\"",
+                                "\"organizationName\": \"Organización arbitraria\"")))
+                .andExpect(status().isBadRequest());
+
+        assertThat(platformRepository.count()).isEqualTo(platformsBefore);
+        assertThat(organizationRepository.count()).isEqualTo(organizationsBefore);
+    }
+
+    @Test
     void userCannotReadUpdateOrDeleteAnotherUsersRespondent() throws Exception {
         mockMvc.perform(get("/api/respondents/{id}", respondentB.getRespondentId())
                         .header("Authorization", bearer(userA)))
@@ -178,6 +253,29 @@ class SecurityIntegrationTests {
     void aggregateDashboardRemainsPublic() throws Exception {
         mockMvc.perform(get("/api/dashboard/respondent/count"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void dashboardReadCalculationsNormalizeHistoricalValuesAndIgnoreInvalidOnes() throws Exception {
+        saveUsage(userA, 20, "Yes", "Between 1 and 2 hours");
+        saveUsage(userA, 20, "Sí", "Menos de 1 hora");
+        saveUsage(userA, 20, "No", "More than 5 hours");
+        saveUsage(userA, 20, "string", "More than 5 hours");
+        saveUsage(userA, 20, "Yes", "string");
+        saveUsage(userA, 20, "Sí", "intervalo desconocido");
+
+        mockMvc.perform(get("/api/dashboard/social-media-users/percent"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(80.0));
+
+        mockMvc.perform(get("/api/dashboard/social-media-usage/average-by-age"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.values[0]").value(60.0));
+
+        assertThat(DashboardController.convertTimeStringToMinutes("Between 2 and 3 hours")).hasValue(150);
+        assertThat(DashboardController.convertTimeStringToMinutes("Entre 2 y 3 horas")).hasValue(150);
+        assertThat(DashboardController.convertTimeStringToMinutes("string")).isEmpty();
+        assertThat(DashboardController.convertTimeStringToMinutes("desconocido")).isEmpty();
     }
 
     @Test
@@ -235,6 +333,21 @@ class SecurityIntegrationTests {
         respondent.setGender("Test");
         respondent.setUser(owner);
         return respondentRepository.save(respondent);
+    }
+
+    private SocialMediaUsage saveUsage(Users owner, int age, String usesSocialMedia, String dailyAverageTime) {
+        Respondent respondent = new Respondent();
+        respondent.setTimestamp(LocalDateTime.now());
+        respondent.setAge(age);
+        respondent.setGender("Male");
+        respondent.setUser(owner);
+        SocialMediaUsage usage = new SocialMediaUsage();
+        usage.setRespondent(respondent);
+        usage.setUsesSocialMedia(usesSocialMedia);
+        usage.setDailyAverageTime(dailyAverageTime);
+        respondent.setSocialMediaUsage(usage);
+        respondentRepository.save(respondent);
+        return usage;
     }
 
     private String bearer(Users user) {

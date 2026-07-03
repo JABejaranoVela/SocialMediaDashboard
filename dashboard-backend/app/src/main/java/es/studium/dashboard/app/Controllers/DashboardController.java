@@ -5,7 +5,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.OptionalInt;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -40,9 +41,18 @@ public class DashboardController {
     // % que usan redes sociales
     @GetMapping("/social-media-users/percent")
     public Double getSocialMediaUsersPercent() {
-        long total = respondentRepository.count();
-        long users = socialMediaUsageRepository.countByUsesSocialMedia("Yes");
-        return total > 0 ? (100.0 * users) / total : 0.0;
+        long validAnswers = 0;
+        long users = 0;
+        for (SocialMediaUsage usage : socialMediaUsageRepository.findAll()) {
+            Optional<Boolean> normalized = normalizeSocialMediaUse(usage.getUsesSocialMedia());
+            if (normalized.isPresent()) {
+                validAnswers++;
+                if (normalized.get()) {
+                    users++;
+                }
+            }
+        }
+        return validAnswers > 0 ? (100.0 * users) / validAnswers : 0.0;
     }
 
     // Promedio escala distracción mental
@@ -61,17 +71,15 @@ public class DashboardController {
         for (int i = 0; i < edges.length - 1; i++) {
             Integer minAge = edges[i];
             Integer maxAge = edges[i + 1] - 1;
-            // Busca todos los respondents de ese rango de edad
             List<SocialMediaUsage> usageList = socialMediaUsageRepository
-                    .findAllByRespondent_AgeBetweenAndUsesSocialMedia(minAge, maxAge, "Yes");
+                    .findAllByRespondent_AgeBetween(minAge, maxAge);
 
-            // Convierte los valores de daily_average_time a minutos
-            List<Integer> times = usageList.stream()
-                    .map(u -> convertTimeStringToMinutes(u.getDailyAverageTime()))
-                    .collect(Collectors.toList());
-
-            // Calcula el promedio
-            double avg = times.stream().mapToInt(x -> x).average().orElse(0.0);
+            double avg = usageList.stream()
+                    .filter(usage -> normalizeSocialMediaUse(usage.getUsesSocialMedia()).orElse(false))
+                    .map(usage -> convertTimeStringToMinutes(usage.getDailyAverageTime()))
+                    .flatMapToInt(OptionalInt::stream)
+                    .average()
+                    .orElse(0.0);
             averages.add(avg);
         }
 
@@ -81,23 +89,30 @@ public class DashboardController {
         return res;
     }
 
-    public static int convertTimeStringToMinutes(String s) {
-        if (s == null)
-            return 0;
-        s = s.toLowerCase();
-        if (s.contains("less than 1 hour"))
-            return 30;
-        if (s.contains("between 1 and 2 hours"))
-            return 90;
-        if (s.contains("between 2 and 3 hours"))
-            return 150;
-        if (s.contains("between 3 and 4 hours"))
-            return 210;
-        if (s.contains("between 4 and 5 hours"))
-            return 270;
-        if (s.contains("more than 5 hours"))
-            return 330;
-        return 0; // fallback
+    static Optional<Boolean> normalizeSocialMediaUse(String value) {
+        if (value == null) {
+            return Optional.empty();
+        }
+        return switch (value.trim()) {
+            case "Yes", "Sí", "Si" -> Optional.of(true);
+            case "No" -> Optional.of(false);
+            default -> Optional.empty();
+        };
+    }
+
+    public static OptionalInt convertTimeStringToMinutes(String value) {
+        if (value == null) {
+            return OptionalInt.empty();
+        }
+        return switch (value.trim()) {
+            case "Less than an Hour", "Menos de 1 hora" -> OptionalInt.of(30);
+            case "Between 1 and 2 hours", "Entre 1 y 2 horas" -> OptionalInt.of(90);
+            case "Between 2 and 3 hours", "Entre 2 y 3 horas" -> OptionalInt.of(150);
+            case "Between 3 and 4 hours", "Entre 3 y 4 horas" -> OptionalInt.of(210);
+            case "Between 4 and 5 hours", "Entre 4 y 5 horas" -> OptionalInt.of(270);
+            case "More than 5 hours", "Más de 5 horas" -> OptionalInt.of(330);
+            default -> OptionalInt.empty();
+        };
     }
 
     @GetMapping("/platform/bubble-count")

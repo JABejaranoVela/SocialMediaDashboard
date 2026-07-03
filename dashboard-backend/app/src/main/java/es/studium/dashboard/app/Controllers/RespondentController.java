@@ -22,6 +22,7 @@ import es.studium.dashboard.app.repository.RespondentPlatformRepository;
 import es.studium.dashboard.app.repository.RespondentRepository;
 import es.studium.dashboard.app.repository.SocialMediaUsageRepository;
 import es.studium.dashboard.app.service.RespondentService;
+import es.studium.dashboard.app.validation.RespondentCatalogValidator;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -50,6 +51,7 @@ public class RespondentController {
     private final PlatformRepository platformRepository;
     private final RespondentOrganizationRepository respondentOrganizationRepository;
     private final RespondentPlatformRepository respondentPlatformRepository;
+    private final RespondentCatalogValidator catalogValidator;
 
     public RespondentController(
             RespondentService service,
@@ -60,7 +62,8 @@ public class RespondentController {
             OrganizationRepository organizationRepository,
             PlatformRepository platformRepository,
             RespondentOrganizationRepository respondentOrganizationRepository,
-            RespondentPlatformRepository respondentPlatformRepository) {
+            RespondentPlatformRepository respondentPlatformRepository,
+            RespondentCatalogValidator catalogValidator) {
         this.service = service;
         this.respondentRepository = respondentRepository;
         this.socialMediaUsageRepository = socialMediaUsageRepository;
@@ -70,6 +73,7 @@ public class RespondentController {
         this.platformRepository = platformRepository;
         this.respondentOrganizationRepository = respondentOrganizationRepository;
         this.respondentPlatformRepository = respondentPlatformRepository;
+        this.catalogValidator = catalogValidator;
     }
 
     @GetMapping
@@ -91,6 +95,7 @@ public class RespondentController {
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody RespondentRegisterDto dto, Authentication authentication) {
+        catalogValidator.validate(dto);
         Users user = usersRepository.findByUsername(authentication.getName());
         if (user == null) {
             return ResponseEntity.status(401).body("No autorizado");

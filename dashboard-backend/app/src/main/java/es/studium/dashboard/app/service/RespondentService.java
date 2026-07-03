@@ -19,6 +19,7 @@ import es.studium.dashboard.app.repository.RespondentOrganizationRepository;
 import es.studium.dashboard.app.repository.RespondentPlatformRepository;
 import es.studium.dashboard.app.repository.RespondentRepository;
 import es.studium.dashboard.app.repository.SocialMediaUsageRepository;
+import es.studium.dashboard.app.validation.RespondentCatalogValidator;
 import jakarta.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +49,8 @@ public class RespondentService {
     private RespondentPlatformRepository respondentPlatformRepository;
     @Autowired
     private PlatformRepository platformRepository;
+    @Autowired
+    private RespondentCatalogValidator catalogValidator;
 
     public RespondentService(RespondentRepository repo) {
         this.repo = repo;
@@ -81,6 +84,8 @@ public class RespondentService {
         if (optionalRespondent.isEmpty()) {
             return Optional.empty();
         }
+
+        catalogValidator.validate(dto);
 
         Respondent respondent = optionalRespondent.get();
 

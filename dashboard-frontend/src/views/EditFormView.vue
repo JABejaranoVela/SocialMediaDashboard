@@ -12,10 +12,12 @@
                 Género:
                 <select v-model="form.gender">
                     <option disabled value="">Selecciona...</option>
-                    <option>Masculino</option>
-                    <option>Femenino</option>
-                    <option>Otro</option>
-                    <option>Prefiero no decirlo</option>
+                    <option
+                        v-if="form.gender && !genderOptions.some(item => item.value === form.gender)"
+                        :value="form.gender"
+                        disabled
+                    >{{ form.gender }} (valor histórico; selecciona una opción válida)</option>
+                    <option v-for="item in genderOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
                 </select>
                 <span v-if="showErrors && !form.gender" class="error-msg">El género es obligatorio.</span>
             </label>
@@ -28,10 +30,7 @@
                 Estado de relación:
                 <select v-model="form.relationship_status">
                     <option disabled value="">Selecciona...</option>
-                    <option>Soltero</option>
-                    <option>En relación</option>
-                    <option>Casado</option>
-                    <option>Divorciado</option>
+                    <option v-for="item in relationshipOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
                 </select>
                 <span v-if="showErrors && !form.relationship_status" class="error-msg">Este campo es obligatorio.</span>
             </label>
@@ -39,11 +38,7 @@
                 Situación ocupacional:
                 <select v-model="form.occupation_status">
                     <option disabled value="">Selecciona...</option>
-                    <option>Jubilado</option>
-                    <option>Trabajador</option>
-                    <option>Estudiante universitario</option>
-                    <option>Estudiante escolar</option>
-                    <option>Desempleado</option>
+                    <option v-for="item in occupationOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
                 </select>
                 <span v-if="showErrors && !form.occupation_status" class="error-msg">Este campo es obligatorio.</span>
             </label>
@@ -56,8 +51,7 @@
                 ¿Usas redes sociales?
                 <select v-model="form.uses_social_media">
                     <option disabled value="">Selecciona...</option>
-                    <option>Sí</option>
-                    <option>No</option>
+                    <option v-for="item in socialMediaUseOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
                 </select>
                 <span v-if="showErrors && !form.uses_social_media" class="error-msg">Este campo es obligatorio.</span>
             </label>
@@ -65,12 +59,7 @@
                 Tiempo medio diario:
                 <select v-model="form.daily_average_time">
                     <option disabled value="">Selecciona...</option>
-                    <option>Menos de 1 hora</option>
-                    <option>Entre 1 y 2 horas</option>
-                    <option>Entre 2 y 3 horas</option>
-                    <option>Entre 3 y 4 horas</option>
-                    <option>Entre 4 y 5 horas</option>
-                    <option>Más de 5 horas</option>
+                    <option v-for="item in dailyTimeOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
                 </select>
                 <span v-if="showErrors && !form.daily_average_time" class="error-msg">Este campo es obligatorio.</span>
             </label>
@@ -135,12 +124,8 @@
             <label>
                 Organización:
                 <select v-model="form.organization_name">
-                    <option disabled value="">Selecciona...</option>
-                    <option>Empresa</option>
-                    <option>Gobierno</option>
-                    <option>Privada</option>
-                    <option>Colegio</option>
-                    <option>Universidad</option>
+                    <option value="">Sin afiliación</option>
+                    <option v-for="item in organizationOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
                 </select>
             </label>
         </fieldset>
@@ -149,8 +134,8 @@
         <fieldset>
             <legend>Plataformas que usas (opcional)</legend>
             <div class="platform-checkboxes">
-                <label v-for="pl in platformList" :key="pl">
-                    <input type="checkbox" :value="pl" v-model="form.platforms" /> {{ pl }}
+                <label v-for="pl in platformOptions" :key="pl.value">
+                    <input type="checkbox" :value="pl.value" v-model="form.platforms" /> {{ pl.label }}
                 </label>
             </div>
         </fieldset>
@@ -172,11 +157,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-
-const platformList = [
-    "Facebook", "Instagram", "Twitter", "YouTube", "TikTok",
-    "Discord", "Pinterest", "Snapchat", "Reddit"
-]
+import {
+    dailyTimeOptions, genderOptions, normalizeHistoricalValue, occupationOptions,
+    organizationOptions, platformOptions, relationshipOptions, socialMediaUseOptions
+} from '../catalogs/respondentCatalogs.js'
 
 const form = ref({
     age: '',
@@ -225,11 +209,11 @@ onMounted(async () => {
         // Mapear a los campos del formulario
         form.value = {
             age: data.age ?? '',
-            gender: data.gender ?? '',
-            relationship_status: data.demographics?.relationshipStatus ?? '',
-            occupation_status: data.demographics?.occupationStatus ?? '',
-            uses_social_media: data.socialMediaUsage?.usesSocialMedia ?? '',
-            daily_average_time: data.socialMediaUsage?.dailyAverageTime ?? '',
+            gender: normalizeHistoricalValue('gender', data.gender) ?? '',
+            relationship_status: normalizeHistoricalValue('relationship', data.demographics?.relationshipStatus) ?? '',
+            occupation_status: normalizeHistoricalValue('occupation', data.demographics?.occupationStatus) ?? '',
+            uses_social_media: normalizeHistoricalValue('socialMediaUse', data.socialMediaUsage?.usesSocialMedia) ?? '',
+            daily_average_time: normalizeHistoricalValue('dailyTime', data.socialMediaUsage?.dailyAverageTime) ?? '',
             aimless_usage_frequency: data.socialMediaUsage?.aimlessUsageFrequency ?? 1,
             distraction_frequency: data.socialMediaUsage?.distractionFrequency ?? 1,
             restlessness_frequency: data.socialMediaUsage?.restlessnessFrequency ?? 1,
@@ -242,8 +226,12 @@ onMounted(async () => {
             depressed_frequency: data.mentalHealthMetrics?.depressedFrequency ?? 1,
             interest_fluctuation_scale: data.mentalHealthMetrics?.interestFluctuationScale ?? 1,
             sleep_issue_scale: data.mentalHealthMetrics?.sleepIssueScale ?? 1,
-            organization_name: data.organizations?.length > 0 ? data.organizations[0].organizationName : '',
-            platforms: data.platforms ? data.platforms.map(p => p.platformName) : [],
+            organization_name: data.organizations?.length > 0
+                ? (normalizeHistoricalValue('organization', data.organizations[0].organizationName) ?? '')
+                : '',
+            platforms: data.platforms
+                ? data.platforms.map(p => normalizeHistoricalValue('platform', p.platformName)).filter(Boolean)
+                : [],
         }
     }
 })

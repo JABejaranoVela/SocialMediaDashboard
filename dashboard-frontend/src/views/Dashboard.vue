@@ -15,7 +15,7 @@
           <SocialKpiCard
             v-for="(platform, idx) in bubbleData.labels"
             :key="platform"
-            :label="platform"
+            :label="getCategoryLabel('platform', platform)"
             :value="bubbleData.counts[idx]"
             :color="platformColors[platform] || '#999'"
           />
@@ -30,7 +30,7 @@
           <OccupationKpiCard
             v-for="(label, idx) in occupationData.labels"
             :key="label"
-            :label="label"
+            :label="getCategoryLabel('occupation', label)"
             :value="occupationPercents[idx] + '%'"
             :color="occupationColors[idx]"
           />
@@ -69,6 +69,7 @@ import OccupationPieChart from '../components/OccupationPieChart.vue'
 import SocialKpiCard from '../components/SocialKpiCard.vue'
 import OccupationKpiCard from '../components/OccupationKpiCard.vue'
 import BulletChart from '../components/BulletChart.vue'
+import { getCategoryLabel, normalizeAggregatedSeries } from '../catalogs/respondentCatalogs.js'
 
 const kpis = ref({ respondentCount: '...', percentUseSocial: '...', avgDistraction: '...' })
 const bubbleData = ref({ labels: [], counts: [] })
@@ -76,7 +77,10 @@ const platformColors = {
   Facebook: '#1877F3', Instagram: '#E4405F', Twitter: '#1DA1F2', YouTube: '#FF0000',
   TikTok: '#000000', Discord: '#7289DA', Pinterest: '#E60023', Snapchat: '#FFFC00', Reddit: '#FF4500'
 }
-const occupationColors = ['#6495ED', '#40E0D0', '#4B0082', '#FFB300']
+const occupationColorsByValue = {
+  'University Student': '#6495ED', 'School Student': '#40E0D0',
+  'Salaried Worker': '#4B0082', Retired: '#FFB300', Unemployed: '#8A2BE2'
+}
 const occupationData = ref({ labels: [], counts: [] })
 const occupationPercents = ref([])
 const bulletData = ref({ labels: [], averages: [] })
@@ -93,12 +97,17 @@ onMounted(async () => {
   kpis.value.respondentCount = c1
   kpis.value.percentUseSocial = Number(c2).toFixed(1) + '%'
   kpis.value.avgDistraction = Number(c3).toFixed(2)
-  bubbleData.value = bubbleResp
-  occupationData.value = occupationResp
-  const total = occupationResp.counts.reduce((a, b) => a + b, 0)
-  occupationPercents.value = occupationResp.counts.map(c => ((c * 100 / total).toFixed(1)))
+  const platforms = normalizeAggregatedSeries('platform', bubbleResp.labels, bubbleResp.counts)
+  bubbleData.value = { labels: platforms.labels, counts: platforms.values }
+  const occupations = normalizeAggregatedSeries('occupation', occupationResp.labels, occupationResp.counts)
+  occupationData.value = { labels: occupations.labels, counts: occupations.values }
+  const total = occupations.values.reduce((a, b) => a + b, 0)
+  occupationPercents.value = occupations.values.map(c => total > 0 ? (c * 100 / total).toFixed(1) : '0.0')
+  occupationColors.value = occupations.labels.map(label => occupationColorsByValue[label] || '#888888')
   bulletData.value = bulletResp
 })
+
+const occupationColors = ref([])
 </script>
 
 <style scoped>

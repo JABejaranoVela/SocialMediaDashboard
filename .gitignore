@@ -4,6 +4,7 @@
 .env.prod.local
 .env.deploy
 *.sql
+!db/manual-normalization-socialmedia.sql
 *.sql.tmp
 
 # Build output and dependencies

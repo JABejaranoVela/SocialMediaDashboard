@@ -8,11 +8,15 @@
 import { ref, onMounted } from 'vue'
 import { Doughnut } from 'vue-chartjs'
 import { Chart, ArcElement, Tooltip, Legend, Title } from 'chart.js'
+import { normalizeAggregatedSeries } from '../catalogs/respondentCatalogs.js'
 
 Chart.register(ArcElement, Tooltip, Legend, Title)
 
 const chartData = ref(null)
-const occupationColors = ['#6495ED', '#40E0D0', '#4B0082', '#FFB300', '#8A2BE2', '#2E8B57']
+const occupationColors = {
+  'University Student': '#6495ED', 'School Student': '#40E0D0',
+  'Salaried Worker': '#4B0082', Retired: '#FFB300', Unemployed: '#8A2BE2'
+}
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -34,11 +38,12 @@ const chartOptions = {
 onMounted(async () => {
   const resp = await fetch('/api/demographics/dashboard/occupation-status-pie')
   const data = await resp.json()
+  const normalized = normalizeAggregatedSeries('occupation', data.labels, data.counts)
   chartData.value = {
-    labels: data.labels,
+    labels: normalized.displayLabels,
     datasets: [{
-      data: data.counts,
-      backgroundColor: occupationColors.slice(0, data.labels.length)
+      data: normalized.values,
+      backgroundColor: normalized.labels.map(label => occupationColors[label] || '#888888')
     }]
   }
 })

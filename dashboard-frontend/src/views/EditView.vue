@@ -25,8 +25,8 @@
         <span class="edit-role">({{ registro.user?.role || '-' }})</span>
       </div>
       <div class="edit-cell" data-label="Edad">{{ registro.age ?? '-' }}</div>
-      <div class="edit-cell" data-label="Género">{{ registro.gender ?? '-' }}</div>
-      <div class="edit-cell" data-label="Situación laboral">{{ registro.demographics?.occupationStatus ?? '-' }}</div>
+      <div class="edit-cell" data-label="Género">{{ displayCategory('gender', registro.gender) }}</div>
+      <div class="edit-cell" data-label="Situación laboral">{{ displayCategory('occupation', registro.demographics?.occupationStatus) }}</div>
       <div class="edit-cell" data-label="Fecha de registro">
         {{ registro.timestamp ? (new Date(registro.timestamp)).toLocaleDateString() : '-' }}
       </div>
@@ -52,9 +52,9 @@
           <div class="edit-label">Edad:</div>
           <div class="edit-value">{{ registro.age ?? '-' }}</div>
           <div class="edit-label">Género:</div>
-          <div class="edit-value">{{ registro.gender ?? '-' }}</div>
+          <div class="edit-value">{{ displayCategory('gender', registro.gender) }}</div>
           <div class="edit-label">Situación laboral:</div>
-          <div class="edit-value">{{ registro.demographics?.occupationStatus ?? '-' }}</div>
+          <div class="edit-value">{{ displayCategory('occupation', registro.demographics?.occupationStatus) }}</div>
           <div class="edit-label">Fecha de registro:</div>
           <div class="edit-value">{{ registro.timestamp ? (new Date(registro.timestamp)).toLocaleDateString() : '-' }}</div>
         </div>
@@ -81,10 +81,15 @@
 <script setup>
 import { ref, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
+import { getCategoryLabel, isInvalidCategoryValue } from '../catalogs/respondentCatalogs.js'
 
 const router = useRouter()
 const registros = ref([])
 const selectedRegistro = ref(null)
+
+function displayCategory(category, value) {
+  return isInvalidCategoryValue(value) ? 'Pendiente de revisión' : getCategoryLabel(category, value)
+}
 
 async function fetchRegistros() {
   const token = localStorage.getItem('token')
