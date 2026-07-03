@@ -405,8 +405,9 @@ async function confirmDelete() {
 .edit-row {
   display: block;
   width: 100%;
+  max-width: none;
   min-width: 0;
-  margin: 0 0 1rem;
+  margin: 0 auto 1rem;
   padding: 1rem;
   border: 1px solid #dde6f1;
   border-radius: 0.75rem;
@@ -502,6 +503,13 @@ async function confirmDelete() {
   .modal-btn-row { flex-direction: row; }
   .modal-delete-btn,
   .modal-cancel-btn { width: auto; min-width: 8rem; }
+}
+
+@media (min-width: 576px) and (max-width: 991.98px) {
+  .edit-table-container {
+    max-width: 45rem;
+    margin-inline: auto;
+  }
 }
 
 @media (min-width: 1200px) {
