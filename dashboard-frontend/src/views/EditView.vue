@@ -32,35 +32,57 @@
       </div>
       <div class="edit-cell acciones" data-label="Modificar" @click.stop>
         <button class="edit-btn" type="button" aria-label="Modificar registro" title="Modificar registro" @click="editarRegistro(registro)">
-          ✎
+          <span class="action-icon" aria-hidden="true">✎</span>
+          <span class="action-text">Editar</span>
         </button>
       </div>
       <div class="edit-cell acciones" data-label="Eliminar" @click.stop>
-        <button class="delete-btn" type="button" aria-label="Eliminar registro" title="Eliminar registro" @click="openDeleteModal(registro)">✕</button>
+        <button class="delete-btn" type="button" aria-label="Eliminar registro" title="Eliminar registro" @click="openDeleteModal(registro)">
+          <span class="action-icon" aria-hidden="true">×</span>
+          <span class="action-text">Eliminar</span>
+        </button>
       </div>
 
       <!-- Móvil: tabla 2xN + fila final centrada -->
       <div class="edit-mobile-fields">
         <div class="edit-fields-grid">
-          <div class="edit-label">ID:</div>
-          <div class="edit-value">{{ registro.respondentId }}</div>
-          <div class="edit-label">Usuario:</div>
-          <div class="edit-value">
-            {{ registro.user?.username || 'Desconocido' }}
-            <span class="edit-role">({{ registro.user?.role || '-' }})</span>
+          <div class="respondent-card-field">
+            <span class="edit-label">ID:</span>
+            <span class="edit-value">{{ registro.respondentId }}</span>
           </div>
-          <div class="edit-label">Edad:</div>
-          <div class="edit-value">{{ registro.age ?? '-' }}</div>
-          <div class="edit-label">Género:</div>
-          <div class="edit-value">{{ displayCategory('gender', registro.gender) }}</div>
-          <div class="edit-label">Situación laboral:</div>
-          <div class="edit-value">{{ displayCategory('occupation', registro.demographics?.occupationStatus) }}</div>
-          <div class="edit-label">Fecha de registro:</div>
-          <div class="edit-value">{{ registro.timestamp ? (new Date(registro.timestamp)).toLocaleDateString() : '-' }}</div>
+          <div class="respondent-card-field">
+            <span class="edit-label">Usuario:</span>
+            <span class="edit-value">
+              {{ registro.user?.username || 'Desconocido' }}
+              <span class="edit-role">({{ registro.user?.role || '-' }})</span>
+            </span>
+          </div>
+          <div class="respondent-card-field">
+            <span class="edit-label">Edad:</span>
+            <span class="edit-value">{{ registro.age ?? '-' }}</span>
+          </div>
+          <div class="respondent-card-field">
+            <span class="edit-label">Género:</span>
+            <span class="edit-value">{{ displayCategory('gender', registro.gender) }}</span>
+          </div>
+          <div class="respondent-card-field respondent-card-field-wide">
+            <span class="edit-label">Situación laboral:</span>
+            <span class="edit-value">{{ displayCategory('occupation', registro.demographics?.occupationStatus) }}</span>
+          </div>
+          <div class="respondent-card-field">
+            <span class="edit-label">Fecha de registro:</span>
+            <span class="edit-value">{{ registro.timestamp ? (new Date(registro.timestamp)).toLocaleDateString() : '-' }}</span>
+          </div>
         </div>
         <div class="edit-mobile-actions">
-          <button class="edit-btn" type="button" aria-label="Modificar registro" title="Modificar registro" @click.stop="editarRegistro(registro)">✎</button>
-          <button class="delete-btn" type="button" aria-label="Eliminar registro" title="Eliminar registro" @click.stop="openDeleteModal(registro)">✕</button>
+          <button class="edit-btn" type="button" aria-label="Modificar registro" title="Modificar registro" @click.stop="editarRegistro(registro)">
+            <span class="action-icon" aria-hidden="true">✎</span>
+            <span class="action-text">Editar</span>
+          </button>
+          <button class="delete-btn" type="button" aria-label="Eliminar registro" title="Eliminar registro" @click.stop="openDeleteModal(registro)">
+            <span class="action-icon" aria-hidden="true">×</span>
+            <span class="action-text">Eliminar</span>
+          </button>
         </div>
       </div>
     </div>
@@ -425,14 +447,23 @@ async function confirmDelete() {
 .edit-fields-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 0.15rem;
+  gap: 0.65rem;
   width: 100%;
   min-width: 0;
   margin-bottom: 1rem;
 }
 
+.respondent-card-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  min-width: 0;
+  gap: 0.25rem 0.4rem;
+}
+
 .edit-label {
-  margin-top: 0.55rem;
+  flex: 0 0 auto;
+  margin: 0;
   color: #2476d2;
   font-size: 0.9rem;
   font-weight: 700;
@@ -450,7 +481,8 @@ async function confirmDelete() {
 
 .edit-mobile-actions {
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 0.75rem;
   width: 100%;
 }
@@ -460,12 +492,22 @@ async function confirmDelete() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  min-width: 2.75rem;
+  width: auto;
+  min-width: 7.5rem;
   min-height: 2.75rem;
   margin: 0;
-  padding: 0;
+  padding: 0.55rem 0.85rem;
+  gap: 0.4rem;
+  border: 1px solid currentColor;
+  border-radius: 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
+
+.edit-btn { background: #edf5ff; }
+.delete-btn { background: #fff1f1; }
+.action-icon { font-size: 1.15em; line-height: 1; }
+.action-text { white-space: nowrap; }
 
 .modal-mask { padding: 1rem; }
 
@@ -498,11 +540,18 @@ async function confirmDelete() {
 
 @media (min-width: 576px) {
   .edit-table-container { margin-top: 1.5rem; }
-  .edit-fields-grid { grid-template-columns: minmax(7rem, 0.8fr) minmax(0, 1.2fr); gap: 0.35rem 0.75rem; }
-  .edit-label { margin: 0; text-align: right; }
+  .edit-fields-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem 1.25rem; }
+  .respondent-card-field-wide { grid-column: 1 / -1; }
+  .edit-label { text-align: left; }
   .modal-btn-row { flex-direction: row; }
   .modal-delete-btn,
   .modal-cancel-btn { width: auto; min-width: 8rem; }
+}
+
+@media (max-width: 575.98px) {
+  .edit-mobile-actions { flex-direction: column; }
+  .edit-mobile-actions .edit-btn,
+  .edit-mobile-actions .delete-btn { width: 100%; }
 }
 
 @media (min-width: 576px) and (max-width: 991.98px) {
@@ -523,5 +572,12 @@ async function confirmDelete() {
   .edit-row { margin: 0; padding: 0.85rem 0.7rem; border: 0; border-bottom: 1px solid #eee; border-radius: 0; box-shadow: none; }
   .edit-cell { display: flex; min-width: 0; overflow-wrap: anywhere; }
   .edit-mobile-fields { display: none; }
+  .acciones .edit-btn,
+  .acciones .delete-btn {
+    width: 100%;
+    min-width: 0;
+    padding: 0.4rem 0.25rem;
+    font-size: 0.78rem;
+  }
 }
 </style>
